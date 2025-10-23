@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.IO.Ports;
 using System.Text.Json;
 
 namespace TcpTester.Models
@@ -7,6 +8,13 @@ namespace TcpTester.Models
     {
         public string Host { get; set; } = "127.0.0.1";
         public int Port { get; set; } = 9000;
+   
+        // Serial Port Settings
+        public string SerialPortName { get; set; } = "COM1";
+        public int BaudRate { get; set; } = 9600;
+        public int Parity { get; set; } = 0; // None = 0
+        public int DataBits { get; set; } = 8;
+        public int StopBits { get; set; } = 1; // One = 1
 
         private static readonly string FilePath =
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");
