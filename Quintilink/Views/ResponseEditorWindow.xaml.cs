@@ -1,15 +1,28 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
 using System.Windows.Input;
-using TcpTester.ViewModels;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using Quintilink.ViewModels;
 using Wpf.Ui.Controls;
 
-namespace TcpTester.Views
+namespace Quintilink.Views
 {
-    public partial class MessageEditorWindow : FluentWindow
+    /// <summary>
+    /// Interaction logic for ResponseEditorWindow.xaml
+    /// </summary>
+    public partial class ResponseEditorWindow : FluentWindow
     {
-        public MessageEditorWindow()
+        public ResponseEditorWindow()
         {
             InitializeComponent();
             Loaded += (_, __) =>

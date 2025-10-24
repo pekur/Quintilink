@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace TcpTester.Models
+namespace Quintilink.Models
 {
     public static class MacroDefinitions
     {

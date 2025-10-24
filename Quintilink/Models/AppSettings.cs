@@ -2,7 +2,7 @@
 using System.IO.Ports;
 using System.Text.Json;
 
-namespace TcpTester.Models
+namespace Quintilink.Models
 {
     public class AppSettings
     {

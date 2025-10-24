@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 
-namespace TcpTester.Behaviors
+namespace Quintilink.Behaviors
 {
     public static class AutoScrollBehavior
     {

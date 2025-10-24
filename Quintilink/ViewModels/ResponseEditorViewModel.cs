@@ -4,9 +4,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Xml.Linq;
-using TcpTester.Models;
+using Quintilink.Models;
 
-namespace TcpTester.ViewModels;
+namespace Quintilink.ViewModels;
 
 public partial class ResponseEditorViewModel : ObservableObject
 {

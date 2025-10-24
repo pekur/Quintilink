@@ -11,11 +11,11 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using TcpTester.Models;
-using TcpTester.ViewModels;
+using Quintilink.Models;
+using Quintilink.ViewModels;
 using Wpf.Ui.Controls;
 
-namespace TcpTester.Views
+namespace Quintilink.Views
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml

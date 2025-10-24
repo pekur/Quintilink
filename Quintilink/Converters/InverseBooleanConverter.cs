@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace TcpTester.Converters
+namespace Quintilink.Converters
 {
     public class InverseBooleanConverter : IValueConverter
     {

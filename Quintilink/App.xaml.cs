@@ -1,9 +1,9 @@
 ﻿using System.Configuration;
 using System.Data;
 using System.Windows;
-using TcpTester.ViewModels;
+using Quintilink.ViewModels;
 
-namespace TcpTester
+namespace Quintilink
 {
     /// <summary>
     /// Interaction logic for App.xaml

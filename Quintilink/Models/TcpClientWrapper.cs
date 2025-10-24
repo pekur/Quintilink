@@ -1,6 +1,6 @@
 ﻿using System.Net.Sockets;
 
-namespace TcpTester.Models
+namespace Quintilink.Models
 {
     public class TcpClientWrapper
     {

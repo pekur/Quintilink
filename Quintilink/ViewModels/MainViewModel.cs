@@ -4,9 +4,9 @@ using System.Collections.ObjectModel;
 using System.IO.Ports;
 using System.Text;
 using System.Windows;
-using TcpTester.Models;
+using Quintilink.Models;
 
-namespace TcpTester.ViewModels
+namespace Quintilink.ViewModels
 {
     public enum ConnectionMode
     {

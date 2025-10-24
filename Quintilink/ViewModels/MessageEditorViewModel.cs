@@ -2,9 +2,9 @@
 using CommunityToolkit.Mvvm.Input;
 using System.Text;
 using System.Text.RegularExpressions;
-using TcpTester.Models;
+using Quintilink.Models;
 
-namespace TcpTester.ViewModels
+namespace Quintilink.ViewModels
 {
     public partial class MessageEditorViewModel : ObservableObject
     {

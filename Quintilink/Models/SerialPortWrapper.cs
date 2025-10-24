@@ -1,6 +1,6 @@
 using System.IO.Ports;
 
-namespace TcpTester.Models
+namespace Quintilink.Models
 {
     public class SerialPortWrapper
     {
