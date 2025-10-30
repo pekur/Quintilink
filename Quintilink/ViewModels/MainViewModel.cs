@@ -4,29 +4,31 @@ using System.Collections.ObjectModel;
 using System.IO.Ports;
 using System.Text;
 using System.Windows;
+using System.Windows.Documents;
 using Quintilink.Models;
+using Quintilink.Helpers;
 
 namespace Quintilink.ViewModels
 {
     public enum ConnectionMode
     {
-        TcpClient,
+ TcpClient,
         TcpServer,
-        SerialPort
+     SerialPort
     }
 
-    public partial class MainViewModel : ObservableObject
-    {
+  public partial class MainViewModel : ObservableObject
+  {
         private readonly TcpClientWrapper _client = new();
-        private readonly TcpServerWrapper _server = new();
+  private readonly TcpServerWrapper _server = new();
         private readonly SerialPortWrapper _serialPort = new();
         private readonly AppSettings _settings;
 
-        [ObservableProperty]
+  [ObservableProperty]
         private string host;
 
         [ObservableProperty]
-        private string serverStatus = "Disconnected";
+   private string serverStatus = "Disconnected";
         [ObservableProperty]
         private string serverStatusTooltip = "";
 
@@ -54,7 +56,7 @@ namespace Quintilink.ViewModels
         private bool isSerialMode = false;
 
         [ObservableProperty]
-        private string log = string.Empty;
+        private FlowDocument logDocument = LogHelper.CreateLogDocument();
 
         [ObservableProperty]
         private bool isConnected;
@@ -152,15 +154,15 @@ namespace Quintilink.ViewModels
         };
 
             _server.DataReceived += async (endpoint, data) =>
-               {
-                   string hex = BitConverter.ToString(data).Replace("-", " ");
-                   string ascii = Encoding.ASCII.GetString(data);
-                   App.Current.Dispatcher.Invoke(() =>
-                   {
-                       AppendLog($"[RX] {endpoint} : {hex} (ASCII: {ascii})");
-                   });
-                   await CheckReaction(hex);
-               };
+      {
+          string hex = BitConverter.ToString(data).Replace("-", " ");
+         string ascii = ConvertToReadableAscii(data);
+       App.Current.Dispatcher.Invoke(() =>
+       {
+         AppendLog($"[RX] {endpoint} : {hex} (ASCII: {ascii})");
+       });
+      await CheckReaction(hex);
+};
 
             _server.ClientConnected += endpoint =>
                     {
@@ -355,23 +357,26 @@ namespace Quintilink.ViewModels
         {
             if (def is null) return;
 
-            var bytes = def.GetBytes();
-            bool success = false;
+   var bytes = def.GetBytes();
+         bool success = false;
 
-            if (IsSerialMode)
+        if (IsSerialMode)
                 success = await _serialPort.SendAsync(bytes);
             else if (IsServerMode)
-                success = await _server.SendAsync(bytes);
-            else
-                success = await _client.SendAsync(bytes);
+          success = await _server.SendAsync(bytes);
+   else
+          success = await _client.SendAsync(bytes);
 
-            if (success)
-            {
-                AppendLog($"[TX] HEX: {MessageDefinition.ToSpacedHex(bytes)} – {bytes.Length} bytes");
+if (success)
+      {
+           string ascii = ConvertToReadableAscii(bytes);
+                string hex = MessageDefinition.ToSpacedHex(bytes);
+       AppendLog($"[TX] ASCII: {ascii}");
+       AppendLog($"[TX] HEX  : {hex} – {bytes.Length} bytes");
             }
             else
             {
-                AppendLog($"[ERR] Failed to send \"{def?.Name ?? "Unknown"}\" – not connected");
+         AppendLog($"[ERR] Failed to send \"{def?.Name ?? "Unknown"}\" – not connected");
             }
         }
 
@@ -481,13 +486,23 @@ namespace Quintilink.ViewModels
 
         private async void OnDataReceived(byte[] data)
         {
-            string ascii = Encoding.ASCII.GetString(data).Trim();
+       string ascii = ConvertToReadableAscii(data);
             string hex = BitConverter.ToString(data).Replace("-", " ");
 
             AppendLog($"[RX] ASCII: {ascii}");
             AppendLog($"[RX] HEX  : {hex}");
 
             await CheckReaction(hex);
+     }
+
+      private static string ConvertToReadableAscii(byte[] data)
+        {
+   var sb = new StringBuilder();
+    foreach (var b in data)
+  {
+                sb.Append(MacroDefinitions.CollapseByte(b));
+    }
+            return sb.ToString();
         }
 
         private async Task CheckReaction(string hex)
@@ -529,10 +544,27 @@ namespace Quintilink.ViewModels
         private void AppendLog(string entry)
         {
             string timestamp = DateTime.Now.ToString("HH:mm:ss");
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                Log += $"[{timestamp}] {entry}{Environment.NewLine}";
-            });
+   Application.Current.Dispatcher.Invoke(() =>
+         {
+       // Determine if this is an ASCII line
+     bool isAsciiLine = entry.StartsWith("[RX] ASCII:") || entry.StartsWith("[TX] ASCII:");
+     
+    // Extract prefix and content
+          string prefix = "";
+                string content = entry;
+
+     if (entry.StartsWith("["))
+         {
+       int endBracket = entry.IndexOf(']');
+   if (endBracket > 0)
+      {
+  prefix = entry.Substring(0, endBracket + 1) + " ";
+        content = entry.Substring(endBracket + 2);
+      }
+             }
+
+    LogHelper.AppendLogEntry(logDocument, timestamp, prefix, content, isAsciiLine);
+      });
         }
     }
 }
