@@ -95,6 +95,19 @@ public partial class ResponseEditorViewModel : ObservableObject
         finally { _isUpdating = false; }
     }
 
+    partial void OnAsciiChanged(string value)   
+    {
+        if (_isUpdating) return;
+        try
+        {
+            _isUpdating = true;
+            var bytes = Encoding.ASCII.GetBytes(value ?? string.Empty);
+            Hex = MessageDefinition.ToSpacedHex(bytes);
+            IsHexValid = true;
+        }
+        finally { _isUpdating = false; }
+    }
+
     partial void OnTriggerChanged(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
