@@ -12,23 +12,23 @@ namespace Quintilink.ViewModels
 {
     public enum ConnectionMode
     {
- TcpClient,
+        TcpClient,
         TcpServer,
-     SerialPort
+        SerialPort
     }
 
-  public partial class MainViewModel : ObservableObject
-  {
+    public partial class MainViewModel : ObservableObject
+    {
         private readonly TcpClientWrapper _client = new();
-  private readonly TcpServerWrapper _server = new();
+        private readonly TcpServerWrapper _server = new();
         private readonly SerialPortWrapper _serialPort = new();
         private readonly AppSettings _settings;
 
-  [ObservableProperty]
+        [ObservableProperty]
         private string host;
 
         [ObservableProperty]
-   private string serverStatus = "Disconnected";
+        private string serverStatus = "Disconnected";
         [ObservableProperty]
         private string serverStatusTooltip = "";
 
@@ -156,13 +156,13 @@ namespace Quintilink.ViewModels
             _server.DataReceived += async (endpoint, data) =>
       {
           string hex = BitConverter.ToString(data).Replace("-", " ");
-         string ascii = ConvertToReadableAscii(data);
-       App.Current.Dispatcher.Invoke(() =>
-       {
-         AppendLog($"[RX] {endpoint} : {hex} (ASCII: {ascii})");
-       });
-      await CheckReaction(hex);
-};
+          string ascii = ConvertToReadableAscii(data);
+          App.Current.Dispatcher.Invoke(() =>
+          {
+              AppendLog($"[RX] {endpoint} : {hex} (ASCII: {ascii})");
+          });
+          await CheckReaction(hex);
+      };
 
             _server.ClientConnected += endpoint =>
                     {
@@ -357,26 +357,26 @@ namespace Quintilink.ViewModels
         {
             if (def is null) return;
 
-   var bytes = def.GetBytes();
-         bool success = false;
+            var bytes = def.GetBytes();
+            bool success = false;
 
-        if (IsSerialMode)
+            if (IsSerialMode)
                 success = await _serialPort.SendAsync(bytes);
             else if (IsServerMode)
-          success = await _server.SendAsync(bytes);
-   else
-          success = await _client.SendAsync(bytes);
+                success = await _server.SendAsync(bytes);
+            else
+                success = await _client.SendAsync(bytes);
 
-if (success)
-      {
-           string ascii = ConvertToReadableAscii(bytes);
+            if (success)
+            {
+                string ascii = ConvertToReadableAscii(bytes);
                 string hex = MessageDefinition.ToSpacedHex(bytes);
-       AppendLog($"[TX] ASCII: {ascii}");
-       AppendLog($"[TX] HEX  : {hex} – {bytes.Length} bytes");
+                AppendLog($"[TX] ASCII: {ascii}");
+                AppendLog($"[TX] HEX  : {hex} – {bytes.Length} bytes");
             }
             else
             {
-         AppendLog($"[ERR] Failed to send \"{def?.Name ?? "Unknown"}\" – not connected");
+                AppendLog($"[ERR] Failed to send \"{def?.Name ?? "Unknown"}\" – not connected");
             }
         }
 
@@ -486,22 +486,22 @@ if (success)
 
         private async void OnDataReceived(byte[] data)
         {
-       string ascii = ConvertToReadableAscii(data);
+            string ascii = ConvertToReadableAscii(data);
             string hex = BitConverter.ToString(data).Replace("-", " ");
 
             AppendLog($"[RX] ASCII: {ascii}");
             AppendLog($"[RX] HEX  : {hex}");
 
             await CheckReaction(hex);
-     }
+        }
 
-      private static string ConvertToReadableAscii(byte[] data)
+        private static string ConvertToReadableAscii(byte[] data)
         {
-   var sb = new StringBuilder();
-    foreach (var b in data)
-  {
+            var sb = new StringBuilder();
+            foreach (var b in data)
+            {
                 sb.Append(MacroDefinitions.CollapseByte(b));
-    }
+            }
             return sb.ToString();
         }
 
@@ -544,27 +544,27 @@ if (success)
         private void AppendLog(string entry)
         {
             string timestamp = DateTime.Now.ToString("HH:mm:ss");
-   Application.Current.Dispatcher.Invoke(() =>
-         {
-       // Determine if this is an ASCII line
-     bool isAsciiLine = entry.StartsWith("[RX] ASCII:") || entry.StartsWith("[TX] ASCII:");
-     
-    // Extract prefix and content
-          string prefix = "";
-                string content = entry;
+            Application.Current.Dispatcher.Invoke(() =>
+                  {
+                      // Determine if this is an ASCII line
+                      bool isAsciiLine = entry.StartsWith("[RX] ASCII:") || entry.StartsWith("[TX] ASCII:");
 
-     if (entry.StartsWith("["))
-         {
-       int endBracket = entry.IndexOf(']');
-   if (endBracket > 0)
-      {
-  prefix = entry.Substring(0, endBracket + 1) + " ";
-        content = entry.Substring(endBracket + 2);
-      }
-             }
+                      // Extract prefix and content
+                      string prefix = "";
+                      string content = entry;
 
-    LogHelper.AppendLogEntry(logDocument, timestamp, prefix, content, isAsciiLine);
-      });
+                      if (entry.StartsWith("["))
+                      {
+                          int endBracket = entry.IndexOf(']');
+                          if (endBracket > 0)
+                          {
+                              prefix = entry.Substring(0, endBracket + 1) + " ";
+                              content = entry.Substring(endBracket + 2);
+                          }
+                      }
+
+                      LogHelper.AppendLogEntry(logDocument, timestamp, prefix, content, isAsciiLine);
+                  });
         }
     }
 }

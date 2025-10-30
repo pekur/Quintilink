@@ -7,15 +7,15 @@ namespace Quintilink.Behaviors
     public static class RichTextBoxHelper
     {
         public static readonly DependencyProperty DocumentProperty =
- DependencyProperty.RegisterAttached(
-             "Document",
-        typeof(FlowDocument),
-         typeof(RichTextBoxHelper),
-  new FrameworkPropertyMetadata(null, OnDocumentChanged));
+             DependencyProperty.RegisterAttached(
+                         "Document",
+                    typeof(FlowDocument),
+                     typeof(RichTextBoxHelper),
+              new FrameworkPropertyMetadata(null, OnDocumentChanged));
 
-   public static FlowDocument GetDocument(DependencyObject obj)
+        public static FlowDocument GetDocument(DependencyObject obj)
         {
-   return (FlowDocument)obj.GetValue(DocumentProperty);
+            return (FlowDocument)obj.GetValue(DocumentProperty);
         }
 
         public static void SetDocument(DependencyObject obj, FlowDocument value)
@@ -23,11 +23,11 @@ namespace Quintilink.Behaviors
             obj.SetValue(DocumentProperty, value);
         }
 
-   private static void OnDocumentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-  {
-      if (d is RichTextBox richTextBox)
+        private static void OnDocumentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-     richTextBox.Document = e.NewValue as FlowDocument ?? new FlowDocument();
+            if (d is RichTextBox richTextBox)
+            {
+                richTextBox.Document = e.NewValue as FlowDocument ?? new FlowDocument();
             }
         }
     }
