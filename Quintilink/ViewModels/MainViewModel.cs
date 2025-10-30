@@ -531,14 +531,7 @@ namespace Quintilink.ViewModels
             if (response.DelayMs > 0)
                 await Task.Delay(response.DelayMs);
 
-            var bytes = response.GetBytes();
-
-            if (IsSerialMode)
-                await _serialPort.SendAsync(bytes);
-            else if (IsServerMode)
-                await _server.SendAsync(bytes);
-            else
-                await _client.SendAsync(bytes);
+            await SendMessageAsync(response);
         }
 
         private void AppendLog(string entry)
