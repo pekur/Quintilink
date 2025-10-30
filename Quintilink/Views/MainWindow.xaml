@@ -18,344 +18,351 @@
     </ui:FluentWindow.DataContext>
 
     <ui:FluentWindow.Resources>
- <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
-  </ui:FluentWindow.Resources>
+        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+    </ui:FluentWindow.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
-      <RowDefinition Height="32"/>
-      <RowDefinition Height="Auto"/>
-         <RowDefinition Height="*"/>
+            <RowDefinition Height="32"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- Custom Fluent title bar -->
-    <ui:TitleBar Grid.Row="0" Title="{Binding Title}" Icon="Send24" FontSize="14" FontWeight="SemiBold" />
+        <ui:TitleBar Grid.Row="0" Title="{Binding Title}" Icon="Send24" FontSize="14" FontWeight="SemiBold" />
 
         <!-- Connection settings -->
         <ui:Card Grid.Column="0" Grid.Row="1" Margin="10,10,10,2">
-         <WrapPanel Orientation="Horizontal" Margin="-10">
-<!-- Section 1: Connection Mode Selection -->
-   <Border BorderThickness="0" Padding="5" Margin="0,0,10,5">
-  <StackPanel Orientation="Horizontal">
-      <RadioButton Content="TCP Client" GroupName="ConnectionMode" Margin="0,0,10,0" VerticalAlignment="Center">
-          <RadioButton.Style>
-  <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
-   <Setter Property="IsChecked" Value="True"/>
-         <Setter Property="IsEnabled" Value="True"/>
-   <Style.Triggers>
-    <DataTrigger Binding="{Binding IsConnected}" Value="True">
-       <Setter Property="IsEnabled" Value="False"/>
-       </DataTrigger>
-          <DataTrigger Binding="{Binding IsServerMode}" Value="True">
-            <Setter Property="IsChecked" Value="False"/>
-         </DataTrigger>
- <DataTrigger Binding="{Binding IsSerialMode}" Value="True">
-    <Setter Property="IsChecked" Value="False"/>
-    </DataTrigger>
-       </Style.Triggers>
-  </Style>
-  </RadioButton.Style>
-         </RadioButton>
+            <WrapPanel Orientation="Horizontal" Margin="-10">
+                <!-- Section 1: Connection Mode Selection -->
+                <Border BorderThickness="0" Padding="5" Margin="0,0,10,5">
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton Content="TCP Client" GroupName="ConnectionMode" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <RadioButton.Style>
+                                <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
+                                    <Setter Property="IsChecked" Value="True"/>
+                                    <Setter Property="IsEnabled" Value="True"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsServerMode}" Value="True">
+                                            <Setter Property="IsChecked" Value="False"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsSerialMode}" Value="True">
+                                            <Setter Property="IsChecked" Value="False"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </RadioButton.Style>
+                        </RadioButton>
 
-          <RadioButton Content="TCP Server" IsChecked="{Binding IsServerMode}" GroupName="ConnectionMode" Margin="0,0,10,0" VerticalAlignment="Center">
-            <RadioButton.Style>
-           <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
-    <Setter Property="IsEnabled" Value="True"/>
-       <Style.Triggers>
-     <DataTrigger Binding="{Binding IsConnected}" Value="True">
-           <Setter Property="IsEnabled" Value="False"/>
-             </DataTrigger>
-  <DataTrigger Binding="{Binding IsSerialMode}" Value="True">
- <Setter Property="IsChecked" Value="False"/>
-  </DataTrigger>
-        </Style.Triggers>
-               </Style>
-         </RadioButton.Style>
-   </RadioButton>
+                        <RadioButton Content="TCP Server" IsChecked="{Binding IsServerMode}" GroupName="ConnectionMode" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <RadioButton.Style>
+                                <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
+                                    <Setter Property="IsEnabled" Value="True"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsSerialMode}" Value="True">
+                                            <Setter Property="IsChecked" Value="False"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </RadioButton.Style>
+                        </RadioButton>
 
-    <RadioButton Content="Serial Port" IsChecked="{Binding IsSerialMode}" GroupName="ConnectionMode" VerticalAlignment="Center">
-        <RadioButton.Style>
-    <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
-    <Setter Property="IsEnabled" Value="True"/>
-  <Style.Triggers>
-       <DataTrigger Binding="{Binding IsConnected}" Value="True">
-     <Setter Property="IsEnabled" Value="False"/>
-   </DataTrigger>
-     </Style.Triggers>
- </Style>
-         </RadioButton.Style>
-              </RadioButton>
-  </StackPanel>
-          </Border>
+                        <RadioButton Content="Serial Port" IsChecked="{Binding IsSerialMode}" GroupName="ConnectionMode" VerticalAlignment="Center">
+                            <RadioButton.Style>
+                                <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
+                                    <Setter Property="IsEnabled" Value="True"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </RadioButton.Style>
+                        </RadioButton>
+                    </StackPanel>
+                </Border>
 
- <!-- Section 2: Connection Settings -->
- <Border BorderThickness="0" Padding="5" Margin="0,0,10,5">
-        <Grid>
- <!-- TCP Settings -->
-     <StackPanel Orientation="Horizontal">
-       <StackPanel.Style>
-     <Style TargetType="StackPanel">
-   <Setter Property="Visibility" Value="Visible"/>
-  <Style.Triggers>
-  <DataTrigger Binding="{Binding IsSerialMode}" Value="True">
-     <Setter Property="Visibility" Value="Collapsed"/>
-          </DataTrigger>
-        </Style.Triggers>
-        </Style>
-</StackPanel.Style>
+                <!-- Section 2: Connection Settings -->
+                <Border BorderThickness="0" Padding="5" Margin="0,0,10,5">
+                    <Grid>
+                        <!-- TCP Settings -->
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSerialMode}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
 
-     <!-- Host -->
-           <TextBox Width="150" Text="{Binding Host}" VerticalAlignment="Center" Margin="0,0,5,0">
-  <TextBox.Style>
-   <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-           <Setter Property="IsEnabled" Value="True"/>
-     <Style.Triggers>
-       <DataTrigger Binding="{Binding IsServerMode}" Value="True">
-      <Setter Property="IsEnabled" Value="False"/>
-            </DataTrigger>
-   <DataTrigger Binding="{Binding IsConnected}" Value="True">
-   <Setter Property="IsEnabled" Value="False"/>
-          </DataTrigger>
-           </Style.Triggers>
-          </Style>
-        </TextBox.Style>
-         </TextBox>
+                            <!-- Host -->
+                            <TextBox Width="150" Text="{Binding Host}" VerticalAlignment="Center" Margin="0,0,5,0">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                        <Setter Property="IsEnabled" Value="True"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsServerMode}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
 
-  <!-- Port -->
-    <TextBox Width="70" Text="{Binding Port}" VerticalAlignment="Center">
-  <TextBox.Style>
-   <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-   <Setter Property="IsEnabled" Value="True"/>
-     <Style.Triggers>
-         <DataTrigger Binding="{Binding IsConnected}" Value="True">
-       <Setter Property="IsEnabled" Value="False"/>
-         </DataTrigger>
-   </Style.Triggers>
-      </Style>
- </TextBox.Style>
-  </TextBox>
-    </StackPanel>
+                            <!-- Port -->
+                            <TextBox Width="70" Text="{Binding Port}" VerticalAlignment="Center">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                        <Setter Property="IsEnabled" Value="True"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                        </StackPanel>
 
-  <!-- Serial Port Settings -->
-   <StackPanel Orientation="Horizontal">
-       <StackPanel.Style>
-       <Style TargetType="StackPanel">
-            <Setter Property="Visibility" Value="Collapsed"/>
-             <Style.Triggers>
-   <DataTrigger Binding="{Binding IsSerialMode}" Value="True">
-    <Setter Property="Visibility" Value="Visible"/>
-     </DataTrigger>
-       </Style.Triggers>
-      </Style>
-</StackPanel.Style>
+                        <!-- Serial Port Settings -->
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSerialMode}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
 
-    <ComboBox Width="Auto" MinWidth="70" ItemsSource="{Binding AvailableSerialPorts}" SelectedItem="{Binding SelectedSerialPort}" VerticalAlignment="Center" Margin="0,0,3,0">
-      <ComboBox.Style>
-  <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
-      <Setter Property="IsEnabled" Value="True"/>
-      <Style.Triggers>
-          <DataTrigger Binding="{Binding IsConnected}" Value="True">
-          <Setter Property="IsEnabled" Value="False"/>
-     </DataTrigger>
-     </Style.Triggers>
-          </Style>
-     </ComboBox.Style>
-      </ComboBox>
+                            <ComboBox Width="Auto" MinWidth="70" ItemsSource="{Binding AvailableSerialPorts}" SelectedItem="{Binding SelectedSerialPort}" VerticalAlignment="Center" Margin="0,0,3,0">
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                        <Setter Property="IsEnabled" Value="True"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
 
-  <ui:Button Command="{Binding RefreshSerialPortsCommand}" ToolTip="Refresh serial ports" Margin="0,0,3,0" Padding="4" Background="Transparent" VerticalAlignment="Center">
-        <ui:Button.Style>
-      <Style TargetType="ui:Button">
-  <Setter Property="IsEnabled" Value="True"/>
-       <Style.Triggers>
-             <DataTrigger Binding="{Binding IsConnected}" Value="True">
-    <Setter Property="IsEnabled" Value="False"/>
-  </DataTrigger>
-    </Style.Triggers>
-        </Style>
-    </ui:Button.Style>
-         <ui:SymbolIcon Symbol="ArrowSync16" FontSize="16"/>
-</ui:Button>
+                            <ui:Button Command="{Binding RefreshSerialPortsCommand}" ToolTip="Refresh serial ports" Margin="0,0,3,0" Padding="4" Background="Transparent" VerticalAlignment="Center">
+                                <ui:Button.Style>
+                                    <Style TargetType="ui:Button">
+                                        <Setter Property="IsEnabled" Value="True"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:Button.Style>
+                                <ui:SymbolIcon Symbol="ArrowSync16" FontSize="16"/>
+                            </ui:Button>
 
-     <ComboBox Width="Auto" MinWidth="60" ItemsSource="{Binding BaudRates}" SelectedItem="{Binding SelectedBaudRate}" Margin="0,0,3,0" VerticalAlignment="Center">
-        <ComboBox.Style>
-        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
-  <Setter Property="IsEnabled" Value="True"/>
-  <Style.Triggers>
-    <DataTrigger Binding="{Binding IsConnected}" Value="True">
-     <Setter Property="IsEnabled" Value="False"/>
-    </DataTrigger>
- </Style.Triggers>
-      </Style>
-   </ComboBox.Style>
-     </ComboBox>
+                            <ComboBox Width="Auto" MinWidth="60" ItemsSource="{Binding BaudRates}" SelectedItem="{Binding SelectedBaudRate}" Margin="0,0,3,0" VerticalAlignment="Center">
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                        <Setter Property="IsEnabled" Value="True"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
 
-   <ComboBox Width="Auto" MinWidth="50" ItemsSource="{Binding ParityOptions}" SelectedItem="{Binding SelectedParity}" Margin="0,0,3,0" VerticalAlignment="Center">
- <ComboBox.Style>
-      <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
-   <Setter Property="IsEnabled" Value="True"/>
-        <Style.Triggers>
- <DataTrigger Binding="{Binding IsConnected}" Value="True">
-       <Setter Property="IsEnabled" Value="False"/>
-      </DataTrigger>
-   </Style.Triggers>
-      </Style>
-              </ComboBox.Style>
-              </ComboBox>
+                            <ComboBox Width="Auto" MinWidth="50" ItemsSource="{Binding ParityOptions}" SelectedItem="{Binding SelectedParity}" Margin="0,0,3,0" VerticalAlignment="Center">
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                        <Setter Property="IsEnabled" Value="True"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
 
- <ComboBox Width="Auto" MinWidth="40" ItemsSource="{Binding DataBitsOptions}" SelectedItem="{Binding SelectedDataBits}" Margin="0,0,3,0" VerticalAlignment="Center">
-        <ComboBox.Style>
- <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
-    <Setter Property="IsEnabled" Value="True"/>
-      <Style.Triggers>
-      <DataTrigger Binding="{Binding IsConnected}" Value="True">
-         <Setter Property="IsEnabled" Value="False"/>
-             </DataTrigger>
-    </Style.Triggers>
-      </Style>
- </ComboBox.Style>
-       </ComboBox>
+                            <ComboBox Width="Auto" MinWidth="40" ItemsSource="{Binding DataBitsOptions}" SelectedItem="{Binding SelectedDataBits}" Margin="0,0,3,0" VerticalAlignment="Center">
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                        <Setter Property="IsEnabled" Value="True"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
 
-       <ComboBox Width="Auto" MinWidth="80" ItemsSource="{Binding StopBitsOptions}" SelectedItem="{Binding SelectedStopBits}" VerticalAlignment="Center">
-     <ComboBox.Style>
-    <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
-               <Setter Property="IsEnabled" Value="True"/>
-  <Style.Triggers>
-      <DataTrigger Binding="{Binding IsConnected}" Value="True">
-    <Setter Property="IsEnabled" Value="False"/>
-     </DataTrigger>
-   </Style.Triggers>
- </Style>
-      </ComboBox.Style>
-</ComboBox>
-   </StackPanel>
-       </Grid>
-   </Border>
+                            <ComboBox Width="Auto" MinWidth="80" ItemsSource="{Binding StopBitsOptions}" SelectedItem="{Binding SelectedStopBits}" VerticalAlignment="Center">
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                        <Setter Property="IsEnabled" Value="True"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
+                        </StackPanel>
+                    </Grid>
+                </Border>
 
-   <!-- Section 3: Connect/Disconnect Buttons and Status -->
-    <Border BorderThickness="0" Padding="5" Margin="0,0,0,5">
-       <StackPanel Orientation="Horizontal">
- <Button Content="Connect" Command="{Binding ConnectCommand}" Margin="0,0,5,0"/>
-     <Button Content="Disconnect" Command="{Binding DisconnectCommand}" Margin="0,0,15,0"/>
+                <!-- Section 3: Connect/Disconnect Buttons and Status -->
+                <Border BorderThickness="0" Padding="5" Margin="0,0,0,5">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Connect" Command="{Binding ConnectCommand}" Margin="0,0,5,0"/>
+                        <Button Content="Disconnect" Command="{Binding DisconnectCommand}" Margin="0,0,15,0"/>
 
-  <!-- Status indicator -->
-   <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-        <Ellipse Width="12" Height="12" Margin="0,0,5,0">
-<Ellipse.Style>
-   <Style TargetType="Ellipse">
-          <Setter Property="Fill" Value="Red"/>
-   <Style.Triggers>
-   <DataTrigger Binding="{Binding IsConnected}" Value="True">
-    <Setter Property="Fill" Value="LimeGreen"/>
-            </DataTrigger>
-          </Style.Triggers>
-     </Style>
-          </Ellipse.Style>
-             </Ellipse>
+                        <!-- Status indicator -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Ellipse Width="12" Height="12" Margin="0,0,5,0">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="Red"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                <Setter Property="Fill" Value="LimeGreen"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
 
-     <TextBlock VerticalAlignment="Center" FontWeight="Bold" Text="{Binding ServerStatus}" ToolTip="{Binding ServerStatusTooltip}"/>
-        </StackPanel>
-           </StackPanel>
-  </Border>
-       </WrapPanel>
+                            <TextBlock VerticalAlignment="Center" FontWeight="Bold" Text="{Binding ServerStatus}" ToolTip="{Binding ServerStatusTooltip}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
         </ui:Card>
 
         <Grid Grid.Row="2" Background="#F3F3F3" Margin="10,2,10,10">
-      <Grid.ColumnDefinitions>
-           <ColumnDefinition Width="3*"/>
-         <ColumnDefinition Width="1*"/>
-   </Grid.ColumnDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
 
-    <!-- Left panel: Log -->
-     <ui:Card  Grid.Column="0" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" Margin="0,0,2,0">
- <TextBox Grid.Row="0" Text="{Binding Log}" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" IsReadOnly="True" TextWrapping="Wrap"
-         Background="#FFFFFF" BorderBrush="#DDD" BorderThickness="1" FontFamily="Consolas" FontSize="13" Margin="-5" />
- </ui:Card>
+            <!-- Left panel: Log -->
+            <ui:Card  Grid.Column="0" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" Margin="0,0,2,0">
+                <TextBox Grid.Row="0" Text="{Binding Log}" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" IsReadOnly="True" TextWrapping="Wrap"
+                    Background="#FFFFFF" BorderBrush="#DDD" BorderThickness="1" FontFamily="Consolas" FontSize="13" Margin="-5" local:AutoScrollBehavior.AutoScroll="True"/>
+            </ui:Card>
 
             <!-- Right panel: Tabs (icons with tooltips) -->
- <ui:Card Grid.Column="1" VerticalContentAlignment="Stretch" VerticalAlignment="Stretch" Margin="2,0,0,0">
-     <TabControl>
-    <!-- Predefined Messages tab -->
-      <TabItem ToolTip="Predefined Messages">
-   <TabItem.Header>
-            <ui:SymbolIcon Symbol="TextBulletListSquare16"/>
-             </TabItem.Header>
+            <ui:Card Grid.Column="1" VerticalContentAlignment="Stretch" VerticalAlignment="Stretch" Margin="2,0,0,0">
+                <TabControl>
+                    <!-- Predefined Messages tab -->
+                    <TabItem ToolTip="Predefined Messages" Width="Auto">
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="TextBox16" Margin="0,0,5,0"/>
+                                <TextBlock>Predefined messages</TextBlock>
+                            </StackPanel>
+                        </TabItem.Header>
 
-    <Grid>
-          <Grid.RowDefinitions>
-         <RowDefinition Height="*"/>
-          <RowDefinition Height="Auto"/>
-         </Grid.RowDefinitions>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-   <ListBox x:Name="msgList" ItemsSource="{Binding PredefinedMessages}" DisplayMemberPath="Name" Margin="0,0,0,10" MouseDoubleClick="MsgList_MouseDoubleClick" BorderBrush="#DDD" BorderThickness="1" 
-     VerticalContentAlignment="Stretch" VerticalAlignment="Stretch">
-         <ListBox.ItemContainerStyle>
-      <Style TargetType="ListBoxItem">
-     <Setter Property="Padding" Value="2,2"/>
-        <Setter Property="Margin" Value="0"/>
-    </Style>
-     </ListBox.ItemContainerStyle>
-           </ListBox>
+                            <ListBox x:Name="msgList" ItemsSource="{Binding PredefinedMessages}" DisplayMemberPath="Name" Margin="0,0,0,10" MouseDoubleClick="MsgList_MouseDoubleClick" BorderBrush="#DDD" BorderThickness="1" 
+                                VerticalContentAlignment="Stretch" VerticalAlignment="Stretch">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Padding" Value="2,2"/>
+                                        <Setter Property="Margin" Value="0"/>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                            </ListBox>
 
-            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-      <ui:Button Command="{Binding SendMessageCommand}" CommandParameter="{Binding SelectedItem, ElementName=msgList}" ToolTip="Send predefined message"
-      Margin="2,0" Padding="2" Background="Transparent" >
-         <ui:SymbolIcon Symbol="Send16" FontSize="24"/>
-      </ui:Button>
-           <ui:Button Command="{Binding AddMessageCommand}" ToolTip="Add predefined message"
-   Margin="2,0" Padding="2" Background="Transparent">
-           <ui:SymbolIcon Symbol="Add16" FontSize="24"/>
-     </ui:Button>
-        <ui:Button Command="{Binding EditMessageCommand}" CommandParameter="{Binding SelectedItem, ElementName=msgList}" ToolTip="Edit predefined message"
-Margin="2,0" Padding="2" Background="Transparent">
-          <ui:SymbolIcon Symbol="Edit16" FontSize="24"/>
-         </ui:Button>
-        <ui:Button Command="{Binding DeleteMessageCommand}" CommandParameter="{Binding SelectedItem, ElementName=msgList}" ToolTip="Delete predefined message"
-     Margin="2,0" Padding="2" Background="Transparent">
-     <ui:SymbolIcon Symbol="Delete16" FontSize="24"/>
-         </ui:Button>
-      </StackPanel>
-               </Grid>
-           </TabItem>
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <ui:Button Command="{Binding SendMessageCommand}" CommandParameter="{Binding SelectedItem, ElementName=msgList}" ToolTip="Send predefined message"
+                                    Margin="2,0" Padding="2" Background="Transparent" >
+                                    <ui:SymbolIcon Symbol="Send16" FontSize="24"/>
+                                </ui:Button>
+                                <ui:Button Command="{Binding AddMessageCommand}" ToolTip="Add predefined message"
+                                    Margin="2,0" Padding="2" Background="Transparent">
+                                    <ui:SymbolIcon Symbol="Add16" FontSize="24"/>
+                                </ui:Button>
+                                <ui:Button Command="{Binding EditMessageCommand}" CommandParameter="{Binding SelectedItem, ElementName=msgList}" ToolTip="Edit predefined message"
+                                    Margin="2,0" Padding="2" Background="Transparent">
+                                    <ui:SymbolIcon Symbol="Edit16" FontSize="24"/>
+                                </ui:Button>
+                                <ui:Button Command="{Binding DeleteMessageCommand}" CommandParameter="{Binding SelectedItem, ElementName=msgList}" ToolTip="Delete predefined message"
+                                    Margin="2,0" Padding="2" Background="Transparent">
+                                    <ui:SymbolIcon Symbol="Delete16" FontSize="24"/>
+                                </ui:Button>
+                            </StackPanel>
+                        </Grid>
+                    </TabItem>
 
-          <!-- Reactions tab -->
-        <TabItem ToolTip="Reactions">
-   <TabItem.Header>
-            <ui:SymbolIcon Symbol="Flash16"/>
-    </TabItem.Header>
+                    <!-- Reactions tab -->
+                    <TabItem ToolTip="Reactions" Width="Auto">
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="ArrowSwap20" Margin="0,0,5,0"/>
+                                <TextBlock>Auto responses</TextBlock>
+                            </StackPanel>
+                        </TabItem.Header>
 
-           <Grid>
-  <Grid.RowDefinitions>
-     <RowDefinition Height="*"/>
-    <RowDefinition Height="Auto"/>
-         </Grid.RowDefinitions>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-  <ListView ItemsSource="{Binding Reactions}" Margin="0,0,0,10" BorderBrush="#DDD" BorderThickness="1" x:Name="reactionsList">
-           <ListView.View>
-          <GridView>
-   <GridViewColumn Header="Trigger (HEX)" DisplayMemberBinding="{Binding Key}" Width="120"/>
-        <GridViewColumn Header="Response" DisplayMemberBinding="{Binding Value.Name}" Width="100"/>
-   </GridView>
-        </ListView.View>
-       </ListView>
+                            <ListView ItemsSource="{Binding Reactions}" Margin="0,0,0,10" BorderBrush="#DDD" BorderThickness="1" x:Name="reactionsList">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Trigger (HEX)" DisplayMemberBinding="{Binding Key}" Width="Auto"/>
+                                        <GridViewColumn Header="Response" DisplayMemberBinding="{Binding Value.Name}" Width="Auto"/>
+                                        <GridViewColumn Header="Response HEX" DisplayMemberBinding="{Binding Value.Content}" Width="Auto"/>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
 
-         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-          <ui:Button Command="{Binding AddReactionCommand}" ToolTip="Add reaction"
- Margin="2,0" Padding="2" Background="Transparent">
-      <ui:SymbolIcon Symbol="Add16" FontSize="24"/>
-   </ui:Button>
-    <ui:Button Command="{Binding EditReactionCommand}" CommandParameter="{Binding SelectedItem, ElementName=reactionsList}" ToolTip="Edit selected reaction"
-        Margin="2,0" Padding="2" Background="Transparent">
-              <ui:SymbolIcon Symbol="Edit16" FontSize="24"/>
-        </ui:Button>
-   <ui:Button Command="{Binding DeleteReactionCommand}" CommandParameter="{Binding SelectedItem, ElementName=reactionsList}" ToolTip="Delete selected reaction"
-   Margin="2,0" Padding="2" Background="Transparent">
-    <ui:SymbolIcon Symbol="Delete16" FontSize="24"/>
-       </ui:Button>
-      </StackPanel>
-            </Grid>
-        </TabItem>
-          </TabControl>
-   </ui:Card>
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <ui:Button Command="{Binding AddReactionCommand}" ToolTip="Add reaction"
+                                    Margin="2,0" Padding="2" Background="Transparent">
+                                    <ui:SymbolIcon Symbol="Add16" FontSize="24"/>
+                                </ui:Button>
+                                <ui:Button Command="{Binding EditReactionCommand}" CommandParameter="{Binding SelectedItem, ElementName=reactionsList}" ToolTip="Edit selected reaction"
+                                    Margin="2,0" Padding="2" Background="Transparent">
+                                    <ui:SymbolIcon Symbol="Edit16" FontSize="24"/>
+                                </ui:Button>
+                                <ui:Button Command="{Binding DeleteReactionCommand}" CommandParameter="{Binding SelectedItem, ElementName=reactionsList}" ToolTip="Delete selected reaction"
+                                    Margin="2,0" Padding="2" Background="Transparent">
+                                    <ui:SymbolIcon Symbol="Delete16" FontSize="24"/>
+                                </ui:Button>
+                            </StackPanel>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </ui:Card>
 
         </Grid>
     </Grid>

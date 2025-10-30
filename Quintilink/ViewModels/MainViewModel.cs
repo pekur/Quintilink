@@ -10,7 +10,7 @@ namespace Quintilink.ViewModels
 {
     public enum ConnectionMode
     {
-    TcpClient,
+        TcpClient,
         TcpServer,
         SerialPort
     }
@@ -20,13 +20,13 @@ namespace Quintilink.ViewModels
         private readonly TcpClientWrapper _client = new();
         private readonly TcpServerWrapper _server = new();
         private readonly SerialPortWrapper _serialPort = new();
-   private readonly AppSettings _settings;
+        private readonly AppSettings _settings;
 
         [ObservableProperty]
-  private string host;
+        private string host;
 
         [ObservableProperty]
- private string serverStatus = "Disconnected";
+        private string serverStatus = "Disconnected";
         [ObservableProperty]
         private string serverStatusTooltip = "";
 
@@ -35,14 +35,14 @@ namespace Quintilink.ViewModels
         partial void OnHostChanged(string value)
         {
             _settings.Host = value;
-     _settings.Save();
+            _settings.Save();
         }
 
         [ObservableProperty]
         private int port;
 
         partial void OnPortChanged(int value)
-    {
+        {
             _settings.Port = value;
             _settings.Save();
         }
@@ -63,27 +63,27 @@ namespace Quintilink.ViewModels
         [ObservableProperty]
         private string selectedSerialPort;
 
-     partial void OnSelectedSerialPortChanged(string value)
- {
+        partial void OnSelectedSerialPortChanged(string value)
+        {
             _settings.SerialPortName = value;
-_settings.Save();
+            _settings.Save();
         }
 
         [ObservableProperty]
-   private int selectedBaudRate;
+        private int selectedBaudRate;
 
         partial void OnSelectedBaudRateChanged(int value)
         {
             _settings.BaudRate = value;
-    _settings.Save();
+            _settings.Save();
         }
 
-     [ObservableProperty]
+        [ObservableProperty]
         private Parity selectedParity;
 
-  partial void OnSelectedParityChanged(Parity value)
-   {
- _settings.Parity = (int)value;
+        partial void OnSelectedParityChanged(Parity value)
+        {
+            _settings.Parity = (int)value;
             _settings.Save();
         }
 
@@ -93,35 +93,35 @@ _settings.Save();
         partial void OnSelectedDataBitsChanged(int value)
         {
             _settings.DataBits = value;
-      _settings.Save();
- }
+            _settings.Save();
+        }
 
         [ObservableProperty]
         private StopBits selectedStopBits;
 
-partial void OnSelectedStopBitsChanged(StopBits value)
- {
+        partial void OnSelectedStopBitsChanged(StopBits value)
+        {
             _settings.StopBits = (int)value;
-    _settings.Save();
+            _settings.Save();
         }
 
         public ObservableCollection<string> AvailableSerialPorts { get; } = new();
         public ObservableCollection<int> BaudRates { get; } = new() { 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200 };
-  public ObservableCollection<Parity> ParityOptions { get; } = new() 
-        { 
-    Parity.None, 
-         Parity.Odd, 
-            Parity.Even, 
-      Parity.Mark, 
-        Parity.Space 
+        public ObservableCollection<Parity> ParityOptions { get; } = new()
+        {
+            Parity.None,
+            Parity.Odd,
+            Parity.Even,
+            Parity.Mark,
+            Parity.Space
         };
         public ObservableCollection<int> DataBitsOptions { get; } = new() { 5, 6, 7, 8 };
-        public ObservableCollection<StopBits> StopBitsOptions { get; } = new() 
-  { 
-            StopBits.One, 
-        StopBits.OnePointFive, 
-   StopBits.Two 
-    };
+        public ObservableCollection<StopBits> StopBitsOptions { get; } = new()
+        {
+            StopBits.One,
+            StopBits.OnePointFive,
+            StopBits.Two
+        };
 
         public ObservableCollection<MessageDefinition> PredefinedMessages { get; } = new();
 
@@ -130,249 +130,249 @@ partial void OnSelectedStopBitsChanged(StopBits value)
         public ObservableCollection<KeyValuePair<string, MessageDefinition>> Reactions { get; }
             = new ObservableCollection<KeyValuePair<string, MessageDefinition>>();
 
-   [ObservableProperty]
+        [ObservableProperty]
         public string title = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
 
         public MainViewModel()
         {
-    _client.DataReceived += OnDataReceived;
-      _client.Disconnected += remote =>
-  {
-           App.Current.Dispatcher.Invoke(() =>
-      {
-          AppendLog(remote
-              ? "[SYS] Disconnected by remote host"
-         : "[SYS] Disconnected");
-
-            IsConnected = false;
-   ConnectCommand.NotifyCanExecuteChanged();
-         DisconnectCommand.NotifyCanExecuteChanged();
-     UpdateServerStatus();
-              });
-  };
-
-         _server.DataReceived += async (endpoint, data) =>
-            {
-    string hex = BitConverter.ToString(data).Replace("-", " ");
-                string ascii = Encoding.ASCII.GetString(data);
-     App.Current.Dispatcher.Invoke(() =>
+            _client.DataReceived += OnDataReceived;
+            _client.Disconnected += remote =>
         {
- AppendLog($"[RX] {endpoint} : {hex} (ASCII: {ascii})");
-                });
-     await CheckReaction(hex);
-      };
+            App.Current.Dispatcher.Invoke(() =>
+             {
+                 AppendLog(remote
+                     ? "[SYS] Disconnected by remote host"
+                : "[SYS] Disconnected");
 
- _server.ClientConnected += endpoint =>
-         {
-                _connectedClients.Add(endpoint);
-  AppendLog($"[SYS] Client connected: {endpoint}");
-            UpdateServerStatus();
-       };
+                 IsConnected = false;
+                 ConnectCommand.NotifyCanExecuteChanged();
+                 DisconnectCommand.NotifyCanExecuteChanged();
+                 UpdateServerStatus();
+             });
+        };
+
+            _server.DataReceived += async (endpoint, data) =>
+               {
+                   string hex = BitConverter.ToString(data).Replace("-", " ");
+                   string ascii = Encoding.ASCII.GetString(data);
+                   App.Current.Dispatcher.Invoke(() =>
+                   {
+                       AppendLog($"[RX] {endpoint} : {hex} (ASCII: {ascii})");
+                   });
+                   await CheckReaction(hex);
+               };
+
+            _server.ClientConnected += endpoint =>
+                    {
+                        _connectedClients.Add(endpoint);
+                        AppendLog($"[SYS] Client connected: {endpoint}");
+                        UpdateServerStatus();
+                    };
 
             _server.ClientDisconnected += endpoint =>
             {
-    _connectedClients.Remove(endpoint);
-       AppendLog($"[SYS] Client disconnected: {endpoint}");
+                _connectedClients.Remove(endpoint);
+                AppendLog($"[SYS] Client disconnected: {endpoint}");
                 UpdateServerStatus();
-         };
+            };
 
-    _serialPort.DataReceived += OnDataReceived;
-        _serialPort.Disconnected += remote =>
-      {
-         App.Current.Dispatcher.Invoke(() =>
-         {
-  AppendLog(remote
-         ? "[SYS] Serial port disconnected (error)"
-        : "[SYS] Serial port disconnected");
+            _serialPort.DataReceived += OnDataReceived;
+            _serialPort.Disconnected += remote =>
+          {
+              App.Current.Dispatcher.Invoke(() =>
+          {
+              AppendLog(remote
+                 ? "[SYS] Serial port disconnected (error)"
+                : "[SYS] Serial port disconnected");
 
-   IsConnected = false;
-          ConnectCommand.NotifyCanExecuteChanged();
-DisconnectCommand.NotifyCanExecuteChanged();
-        UpdateServerStatus();
-        });
-      };
+              IsConnected = false;
+              ConnectCommand.NotifyCanExecuteChanged();
+              DisconnectCommand.NotifyCanExecuteChanged();
+              UpdateServerStatus();
+          });
+          };
 
             // Load messages and reactions
-     var loaded = MessageStore.Load();
+            var loaded = MessageStore.Load();
 
             PredefinedMessages.Clear();
-      foreach (var dto in loaded.PredefinedMessages)
-   PredefinedMessages.Add(dto.ToDefinition());
+            foreach (var dto in loaded.PredefinedMessages)
+                PredefinedMessages.Add(dto.ToDefinition());
 
-         _reactions.Clear();
-  foreach (var kv in loaded.Reactions)
-       _reactions[kv.Key] = kv.Value.ToDefinition();
+            _reactions.Clear();
+            foreach (var kv in loaded.Reactions)
+                _reactions[kv.Key] = kv.Value.ToDefinition();
 
             RefreshReactions();
 
             // load settings
-_settings = AppSettings.Load();
+            _settings = AppSettings.Load();
             Host = _settings.Host;
-    Port = _settings.Port;
- 
-// Load serial port settings
-            RefreshSerialPorts();
-       SelectedSerialPort = _settings.SerialPortName;
- SelectedBaudRate = _settings.BaudRate;
-     SelectedParity = (Parity)_settings.Parity;
-     SelectedDataBits = _settings.DataBits;
-          SelectedStopBits = (StopBits)_settings.StopBits;
+            Port = _settings.Port;
 
- ConnectCommand.NotifyCanExecuteChanged();
- DisconnectCommand.NotifyCanExecuteChanged();
+            // Load serial port settings
+            RefreshSerialPorts();
+            SelectedSerialPort = _settings.SerialPortName;
+            SelectedBaudRate = _settings.BaudRate;
+            SelectedParity = (Parity)_settings.Parity;
+            SelectedDataBits = _settings.DataBits;
+            SelectedStopBits = (StopBits)_settings.StopBits;
+
+            ConnectCommand.NotifyCanExecuteChanged();
+            DisconnectCommand.NotifyCanExecuteChanged();
         }
 
-    [RelayCommand]
+        [RelayCommand]
         private void RefreshSerialPorts()
         {
-   AvailableSerialPorts.Clear();
-          foreach (var port in SerialPortWrapper.GetAvailablePorts())
-        {
-       AvailableSerialPorts.Add(port);
+            AvailableSerialPorts.Clear();
+            foreach (var port in SerialPortWrapper.GetAvailablePorts())
+            {
+                AvailableSerialPorts.Add(port);
             }
-      }
+        }
 
         private void UpdateServerStatus()
-     {
-      if (IsSerialMode)
-  {
-    ServerStatus = IsConnected ? $"Connected ({SelectedSerialPort})" : "Disconnected";
-    ServerStatusTooltip = IsConnected ? $"{SelectedBaudRate} baud, {SelectedDataBits}{SelectedParity.ToString()[0]}{(int)SelectedStopBits}" : "";
+        {
+            if (IsSerialMode)
+            {
+                ServerStatus = IsConnected ? $"Connected ({SelectedSerialPort})" : "Disconnected";
+                ServerStatusTooltip = IsConnected ? $"{SelectedBaudRate} baud, {SelectedDataBits}{SelectedParity.ToString()[0]}{(int)SelectedStopBits}" : "";
             }
             else if (!IsServerMode)
             {
-           ServerStatus = IsConnected ? "Connected" : "Disconnected";
-       ServerStatusTooltip = "";
-    }
+                ServerStatus = IsConnected ? "Connected" : "Disconnected";
+                ServerStatusTooltip = "";
+            }
             else
             {
-            if (!IsConnected)
-       {
-       ServerStatus = "Disconnected";
-      ServerStatusTooltip = "";
-    }
-    else if (_connectedClients.Count == 0)
+                if (!IsConnected)
                 {
-  ServerStatus = "Server - listening";
-      ServerStatusTooltip = $"Listening on port {Port}";
-      }
-  else if (_connectedClients.Count == 1)
-     {
-        ServerStatus = $"Server - 1 client";
-   ServerStatusTooltip = _connectedClients[0];
-      }
-     else
-     {
-   ServerStatus = $"Server - {_connectedClients.Count} clients";
-        ServerStatusTooltip = string.Join(Environment.NewLine, _connectedClients);
-        }
-       }
+                    ServerStatus = "Disconnected";
+                    ServerStatusTooltip = "";
+                }
+                else if (_connectedClients.Count == 0)
+                {
+                    ServerStatus = "Server - listening";
+                    ServerStatusTooltip = $"Listening on port {Port}";
+                }
+                else if (_connectedClients.Count == 1)
+                {
+                    ServerStatus = $"Server - 1 client";
+                    ServerStatusTooltip = _connectedClients[0];
+                }
+                else
+                {
+                    ServerStatus = $"Server - {_connectedClients.Count} clients";
+                    ServerStatusTooltip = string.Join(Environment.NewLine, _connectedClients);
+                }
+            }
         }
 
         public void SaveMessages()
         {
             var storage = new StorageModel
-          {
+            {
                 PredefinedMessages = PredefinedMessages
-       .Select(m => new MessageDto(m))
-       .ToList(),
+                    .Select(m => new MessageDto(m))
+                    .ToList(),
                 Reactions = _reactions.ToDictionary(
-      kv => kv.Key,
-     kv => new MessageDto(kv.Value))
-     };
+                    kv => kv.Key,
+                    kv => new MessageDto(kv.Value))
+            };
 
-       MessageStore.Save(storage);
-      }
+            MessageStore.Save(storage);
+        }
 
         [RelayCommand(CanExecute = nameof(CanConnect))]
         private async Task ConnectAsync()
         {
-      try
- {
-           if (IsSerialMode)
-    {
-       await _serialPort.ConnectAsync(
-      SelectedSerialPort,
-   SelectedBaudRate,
-          SelectedParity,
-           SelectedDataBits,
-          SelectedStopBits);
-        AppendLog($"[SYS] Serial port {SelectedSerialPort} opened at {SelectedBaudRate} baud");
-     }
-       else if (IsServerMode)
-  {
-  await _server.StartAsync(Port);
-     AppendLog($"[SYS] Server started on port {Port}");
-         }
-        else
-           {
-     await _client.ConnectAsync(Host, Port);
-           AppendLog($"[SYS] Connected to {Host}:{Port}");
-       }
-
-      IsConnected = true;
-        }
-       catch (Exception ex)
+            try
             {
-   AppendLog($"[ERR] Failed to connect: {ex.Message}");
-          IsConnected = false;
- }
+                if (IsSerialMode)
+                {
+                    await _serialPort.ConnectAsync(
+                   SelectedSerialPort,
+                SelectedBaudRate,
+                       SelectedParity,
+                        SelectedDataBits,
+                       SelectedStopBits);
+                    AppendLog($"[SYS] Serial port {SelectedSerialPort} opened at {SelectedBaudRate} baud");
+                }
+                else if (IsServerMode)
+                {
+                    await _server.StartAsync(Port);
+                    AppendLog($"[SYS] Server started on port {Port}");
+                }
+                else
+                {
+                    await _client.ConnectAsync(Host, Port);
+                    AppendLog($"[SYS] Connected to {Host}:{Port}");
+                }
 
-   ConnectCommand.NotifyCanExecuteChanged();
-       DisconnectCommand.NotifyCanExecuteChanged();
-      UpdateServerStatus();
+                IsConnected = true;
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"[ERR] Failed to connect: {ex.Message}");
+                IsConnected = false;
+            }
+
+            ConnectCommand.NotifyCanExecuteChanged();
+            DisconnectCommand.NotifyCanExecuteChanged();
+            UpdateServerStatus();
         }
 
         [RelayCommand(CanExecute = nameof(CanDisconnect))]
         private void Disconnect()
         {
-        if (IsSerialMode)
+            if (IsSerialMode)
             {
-             _serialPort.Disconnect();
-            AppendLog("[SYS] Serial port closed");
-       }
-else if (IsServerMode)
+                _serialPort.Disconnect();
+                AppendLog("[SYS] Serial port closed");
+            }
+            else if (IsServerMode)
             {
-        _server.Stop();
-     AppendLog("[SYS] Server stopped");
-        }
+                _server.Stop();
+                AppendLog("[SYS] Server stopped");
+            }
             else
-{
-            _client.Disconnect();
-       }
+            {
+                _client.Disconnect();
+            }
 
-   IsConnected = false;
- ConnectCommand.NotifyCanExecuteChanged();
+            IsConnected = false;
+            ConnectCommand.NotifyCanExecuteChanged();
             DisconnectCommand.NotifyCanExecuteChanged();
- UpdateServerStatus();
-   }
+            UpdateServerStatus();
+        }
 
-    private bool CanConnect() => !IsConnected;
- private bool CanDisconnect() => IsConnected;
+        private bool CanConnect() => !IsConnected;
+        private bool CanDisconnect() => IsConnected;
 
- [RelayCommand]
+        [RelayCommand]
         private async Task SendMessageAsync(MessageDefinition? def)
-  {
-    if (def is null) return;
+        {
+            if (def is null) return;
 
-          var bytes = def.GetBytes();
-      bool success = false;
+            var bytes = def.GetBytes();
+            bool success = false;
 
-   if (IsSerialMode)
-       success = await _serialPort.SendAsync(bytes);
-     else if (IsServerMode)
-            success = await _server.SendAsync(bytes);
+            if (IsSerialMode)
+                success = await _serialPort.SendAsync(bytes);
+            else if (IsServerMode)
+                success = await _server.SendAsync(bytes);
             else
-   success = await _client.SendAsync(bytes);
+                success = await _client.SendAsync(bytes);
 
             if (success)
             {
-             AppendLog($"[TX] HEX: {MessageDefinition.ToSpacedHex(bytes)} – {bytes.Length} bytes");
-          }
-      else
-     {
-   AppendLog($"[ERR] Failed to send \"{def?.Name ?? "Unknown"}\" – not connected");
-         }
+                AppendLog($"[TX] HEX: {MessageDefinition.ToSpacedHex(bytes)} – {bytes.Length} bytes");
+            }
+            else
+            {
+                AppendLog($"[ERR] Failed to send \"{def?.Name ?? "Unknown"}\" – not connected");
+            }
         }
 
         [RelayCommand]
@@ -518,7 +518,9 @@ else if (IsServerMode)
 
             var bytes = response.GetBytes();
 
-            if (IsServerMode)
+            if (IsSerialMode)
+                await _serialPort.SendAsync(bytes);
+            else if (IsServerMode)
                 await _server.SendAsync(bytes);
             else
                 await _client.SendAsync(bytes);
