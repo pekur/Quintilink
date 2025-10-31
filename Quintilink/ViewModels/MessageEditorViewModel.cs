@@ -126,7 +126,7 @@ namespace Quintilink.ViewModels
 
         private void UpdateAsciiFromHex(string hexInput)
         {
-            IsHexValid = ValidateHex(hexInput);  
+            IsHexValid = ValidateHex(hexInput);
             if (!IsHexValid)
             {
                 Ascii = string.Empty;

@@ -256,6 +256,122 @@
                         </StackPanel>
                     </StackPanel>
                 </Border>
+
+                <!-- Section 4: Modem Lines (visible only in serial mode when connected) -->
+                <Border BorderThickness="0" Padding="5" Margin="0,0,0,5">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsSerialMode}" Value="True"/>
+                                        <Condition Binding="{Binding IsConnected}" Value="True"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <Border BorderThickness="1" BorderBrush="#CCC" Padding="5" CornerRadius="3" Background="White">
+                        <StackPanel Orientation="Horizontal">
+                            <!-- Input Lines (Read-only indicators) -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,5,0">
+                                <TextBlock Text="CTS" FontSize="10" Margin="0,0,2,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <Ellipse Width="10" Height="10" Margin="0,0,6,0" VerticalAlignment="Center">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Setter Property="Fill" Value="Gray"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding CtsStatus}" Value="True">
+                                                    <Setter Property="Fill" Value="LimeGreen"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+
+                                <TextBlock Text="DSR" FontSize="10" Margin="0,0,2,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <Ellipse Width="10" Height="10" Margin="0,0,6,0" VerticalAlignment="Center">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Setter Property="Fill" Value="Gray"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DsrStatus}" Value="True">
+                                                    <Setter Property="Fill" Value="LimeGreen"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+
+                                <TextBlock Text="CD" FontSize="10" Margin="0,0,2,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <Ellipse Width="10" Height="10" Margin="0,0,6,0" VerticalAlignment="Center">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Setter Property="Fill" Value="Gray"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding CdStatus}" Value="True">
+                                                    <Setter Property="Fill" Value="LimeGreen"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+
+                                <TextBlock Text="RI" FontSize="10" Margin="0,0,2,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <Ellipse Width="10" Height="10" Margin="0,0,0,0" VerticalAlignment="Center">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Setter Property="Fill" Value="Gray"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RiStatus}" Value="True">
+                                                    <Setter Property="Fill" Value="LimeGreen"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+                            </StackPanel>
+
+                            <!-- Separator -->
+                            <Border Width="1" Background="#CCC" Margin="8,0"/>
+
+                            <!-- Output Lines (Toggle buttons) -->
+                            <StackPanel Orientation="Horizontal" Margin="8,0,0,0">
+                                <Button Command="{Binding ToggleDtrCommand}" ToolTip="Toggle DTR (Data Terminal Ready)" Padding="5,2" Margin="0,0,4,0" FontSize="10" Height="24" MinWidth="38">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                            <Setter Property="Content" Value="DTR"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DtrEnabled}" Value="True">
+                                                    <Setter Property="Background" Value="LimeGreen"/>
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <Button Command="{Binding ToggleRtsCommand}" ToolTip="Toggle RTS (Request To Send)" Padding="5,2" FontSize="10" Height="24" MinWidth="38">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                            <Setter Property="Content" Value="RTS"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RtsEnabled}" Value="True">
+                                                    <Setter Property="Background" Value="LimeGreen"/>
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Border>
             </WrapPanel>
         </ui:Card>
 
@@ -270,7 +386,7 @@
                 <RichTextBox Grid.Row="0" local:RichTextBoxHelper.Document="{Binding LogDocument}" IsReadOnly="True" VerticalScrollBarVisibility="Auto"
     Background="#FFFFFF" BorderBrush="#DDD" BorderThickness="1" Margin="-5" 
       local:AutoScrollBehavior.AutoScroll="True"/>
-   </ui:Card>
+            </ui:Card>
 
             <!-- Right panel: Tabs (icons with tooltips) -->
             <ui:Card Grid.Column="1" VerticalContentAlignment="Stretch" VerticalAlignment="Stretch" Margin="2,0,0,0">

@@ -107,6 +107,25 @@ namespace Quintilink.ViewModels
             _settings.Save();
         }
 
+        // Modem line status properties
+        [ObservableProperty]
+        private bool ctsStatus;
+
+        [ObservableProperty]
+        private bool dsrStatus;
+
+        [ObservableProperty]
+        private bool cdStatus;
+
+        [ObservableProperty]
+        private bool riStatus;
+
+        [ObservableProperty]
+        private bool dtrEnabled;
+
+        [ObservableProperty]
+        private bool rtsEnabled;
+
         public ObservableCollection<string> AvailableSerialPorts { get; } = new();
         public ObservableCollection<int> BaudRates { get; } = new() { 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200 };
         public ObservableCollection<Parity> ParityOptions { get; } = new()
@@ -180,19 +199,27 @@ namespace Quintilink.ViewModels
 
             _serialPort.DataReceived += OnDataReceived;
             _serialPort.Disconnected += remote =>
-          {
-              App.Current.Dispatcher.Invoke(() =>
-          {
-              AppendLog(remote
-                 ? "[SYS] Serial port disconnected (error)"
-                : "[SYS] Serial port disconnected");
+        {
+            App.Current.Dispatcher.Invoke(() =>
+           {
+               AppendLog(remote
+                   ? "[SYS] Serial port disconnected (error)"
+                   : "[SYS] Serial port disconnected");
 
-              IsConnected = false;
-              ConnectCommand.NotifyCanExecuteChanged();
-              DisconnectCommand.NotifyCanExecuteChanged();
-              UpdateServerStatus();
-          });
-          };
+               IsConnected = false;
+               ConnectCommand.NotifyCanExecuteChanged();
+               DisconnectCommand.NotifyCanExecuteChanged();
+               UpdateServerStatus();
+           });
+        };
+
+            _serialPort.ModemLinesChanged += () =>
+     {
+         App.Current.Dispatcher.Invoke(() =>
+                 {
+                     UpdateModemLineStatus();
+                 });
+     };
 
             // Load messages and reactions
             var loaded = MessageStore.Load();
@@ -227,11 +254,66 @@ namespace Quintilink.ViewModels
         [RelayCommand]
         private void RefreshSerialPorts()
         {
+            // Remember the currently selected port
+            string previousSelection = SelectedSerialPort;
+
             AvailableSerialPorts.Clear();
-            foreach (var port in SerialPortWrapper.GetAvailablePorts())
+
+            // Get ports and sort them numerically
+            var ports = SerialPortWrapper.GetAvailablePorts()
+            .OrderBy(port =>
+   {
+       // Extract the numeric part from "COMx"
+       if (port.StartsWith("COM") && int.TryParse(port.Substring(3), out int portNumber))
+           return portNumber;
+       return int.MaxValue; // Put non-standard port names at the end
+   }).ToList();
+
+            foreach (var port in ports)
             {
                 AvailableSerialPorts.Add(port);
             }
+
+            // Restore the previous selection if it still exists
+            if (!string.IsNullOrEmpty(previousSelection) && AvailableSerialPorts.Contains(previousSelection))
+            {
+                SelectedSerialPort = previousSelection;
+            }
+        }
+
+        [RelayCommand(CanExecute = nameof(IsSerialConnected))]
+        private void ToggleDtr()
+        {
+            DtrEnabled = !DtrEnabled;
+            _serialPort.SetDtrEnable(DtrEnabled);
+            AppendLog($"[SYS] DTR {(DtrEnabled ? "enabled" : "disabled")}");
+        }
+
+        [RelayCommand(CanExecute = nameof(IsSerialConnected))]
+        private void ToggleRts()
+        {
+            RtsEnabled = !RtsEnabled;
+            _serialPort.SetRtsEnable(RtsEnabled);
+            AppendLog($"[SYS] RTS {(RtsEnabled ? "enabled" : "disabled")}");
+        }
+
+        private bool IsSerialConnected() => IsConnected && IsSerialMode;
+
+        private void UpdateModemLineStatus()
+        {
+            if (!IsSerialMode || !IsConnected)
+            {
+                CtsStatus = false;
+                DsrStatus = false;
+                CdStatus = false;
+                RiStatus = false;
+                return;
+            }
+
+            CtsStatus = _serialPort.CtsHolding;
+            DsrStatus = _serialPort.DsrHolding;
+            CdStatus = _serialPort.CDHolding;
+            RiStatus = _serialPort.RingIndicator;
         }
 
         private void UpdateServerStatus()
@@ -300,19 +382,33 @@ namespace Quintilink.ViewModels
                         SelectedDataBits,
                        SelectedStopBits);
                     AppendLog($"[SYS] Serial port {SelectedSerialPort} opened at {SelectedBaudRate} baud");
+
+                    // Set connected state FIRST
+                    IsConnected = true;
+
+                    // Update modem line status
+                    UpdateModemLineStatus();
+
+                    // Get initial DTR/RTS states
+                    DtrEnabled = _serialPort.GetDtrEnable();
+                    RtsEnabled = _serialPort.GetRtsEnable();
+
+                    // Notify command can execute changed AFTER IsConnected is set
+                    ToggleDtrCommand.NotifyCanExecuteChanged();
+                    ToggleRtsCommand.NotifyCanExecuteChanged();
                 }
                 else if (IsServerMode)
                 {
                     await _server.StartAsync(Port);
                     AppendLog($"[SYS] Server started on port {Port}");
+                    IsConnected = true;
                 }
                 else
                 {
                     await _client.ConnectAsync(Host, Port);
                     AppendLog($"[SYS] Connected to {Host}:{Port}");
+                    IsConnected = true;
                 }
-
-                IsConnected = true;
             }
             catch (Exception ex)
             {
@@ -332,6 +428,13 @@ namespace Quintilink.ViewModels
             {
                 _serialPort.Disconnect();
                 AppendLog("[SYS] Serial port closed");
+
+                // Clear modem line status
+                UpdateModemLineStatus();
+
+                // Notify command can execute changed
+                ToggleDtrCommand.NotifyCanExecuteChanged();
+                ToggleRtsCommand.NotifyCanExecuteChanged();
             }
             else if (IsServerMode)
             {
