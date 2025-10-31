@@ -9,10 +9,10 @@ namespace Quintilink.Helpers
     public static class LogHelper
     {
         // Define color brushes
-        private static readonly Brush GreenBrush = new SolidColorBrush(Color.FromRgb(0x15, 0x5D, 0x27));
-        private static readonly Brush DimGreenBrush = new SolidColorBrush(Color.FromRgb(0x25, 0xA2, 0x44));
-        private static readonly Brush BlueBrush = new SolidColorBrush(Color.FromRgb(0x02, 0x3E, 0x8A));
-        private static readonly Brush DimBlueBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x77, 0xB6));
+        private static readonly Brush GreenBrush = new SolidColorBrush(Color.FromRgb(0x21, 0x87, 0x3a));
+        private static readonly Brush DimGreenBrush = new SolidColorBrush(Color.FromRgb(0x87, 0xdb, 0x9c));
+        private static readonly Brush BlueBrush = new SolidColorBrush(Color.FromRgb(0x04, 0x51, 0xb5));
+        private static readonly Brush DimBlueBrush = new SolidColorBrush(Color.FromRgb(0x87, 0xbf, 0xde));
 
         public static FlowDocument CreateLogDocument()
         {
