@@ -1,17 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using Quintilink.ViewModels;
 using Wpf.Ui.Controls;
 
@@ -25,22 +15,11 @@ namespace Quintilink.Views
         public ResponseEditorWindow()
         {
             InitializeComponent();
-            Loaded += (_, __) =>
-            {
-                if (DataContext is MessageEditorViewModel vm)
-                {
-                    vm.RequestClose += result =>
-                    {
-                        DialogResult = result;
-                        Close();
-                    };
-                }
-            };
         }
 
         private void HexBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (DataContext is MessageEditorViewModel vm)
+            if (DataContext is ResponseEditorViewModel vm)
             {
                 vm.NormalizeHexField();
             }
@@ -48,17 +27,16 @@ namespace Quintilink.Views
 
         private void HexBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            // Accept only 0–9, A–F, a–f, and space
+            // Accept only hexadecimal characters (0-9, A-F, a-f) and spaces
             if (!Regex.IsMatch(e.Text, "^[0-9A-Fa-f ]$"))
             {
-                e.Handled = true; // block invalid
+                e.Handled = true;
             }
-            // ✅ For valid chars, leave e.Handled = false → WPF inserts it
         }
 
         private void HexBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            // Allow navigation/editing keys
+            // Allow navigation and editing keys
             if (e.Key == Key.Back || e.Key == Key.Delete ||
                 e.Key == Key.Left || e.Key == Key.Right || e.Key == Key.Tab)
             {

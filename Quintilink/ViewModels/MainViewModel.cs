@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Documents;
 using Quintilink.Models;
 using Quintilink.Helpers;
+using Quintilink.Services;
 
 namespace Quintilink.ViewModels
 {
@@ -23,6 +24,8 @@ namespace Quintilink.ViewModels
         private readonly TcpServerWrapper _server = new();
         private readonly SerialPortWrapper _serialPort = new();
         private readonly AppSettings _settings;
+        private readonly IDialogService? _dialogService;
+        private readonly IDispatcherService? _dispatcherService;
 
         [ObservableProperty]
         private string host;
@@ -154,12 +157,22 @@ namespace Quintilink.ViewModels
         [ObservableProperty]
         public string title = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
 
-        public MainViewModel()
+        // Parameterless constructor for XAML designer support
+        public MainViewModel() : this(null, null)
         {
+        }
+
+        // Constructor with dependency injection
+        public MainViewModel(IDialogService? dialogService, IDispatcherService? dispatcherService)
+        {
+            _dialogService = dialogService;
+            _dispatcherService = dispatcherService;
+
             _client.DataReceived += OnDataReceived;
+
             _client.Disconnected += remote =>
         {
-            App.Current.Dispatcher.Invoke(() =>
+            InvokeOnUiThread(() =>
              {
                  AppendLog(remote
                      ? "[SYS] Disconnected by remote host"
@@ -176,11 +189,11 @@ namespace Quintilink.ViewModels
       {
           string hex = BitConverter.ToString(data).Replace("-", " ");
           string ascii = ConvertToReadableAscii(data);
-          App.Current.Dispatcher.Invoke(() =>
-          {
-              AppendLog($"[RX] {endpoint} : {hex} (ASCII: {ascii})");
-          });
-          await CheckReaction(hex);
+            InvokeOnUiThread(() =>
+        {
+       AppendLog($"[RX] {endpoint} : {hex} (ASCII: {ascii})");
+      });
+     await CheckReaction(hex);
       };
 
             _server.ClientConnected += endpoint =>
@@ -200,26 +213,26 @@ namespace Quintilink.ViewModels
             _serialPort.DataReceived += OnDataReceived;
             _serialPort.Disconnected += remote =>
         {
-            App.Current.Dispatcher.Invoke(() =>
-           {
-               AppendLog(remote
-                   ? "[SYS] Serial port disconnected (error)"
-                   : "[SYS] Serial port disconnected");
+            InvokeOnUiThread(() =>
+    {
+  AppendLog(remote
+  ? "[SYS] Serial port disconnected (error)"
+      : "[SYS] Serial port disconnected");
 
-               IsConnected = false;
-               ConnectCommand.NotifyCanExecuteChanged();
-               DisconnectCommand.NotifyCanExecuteChanged();
-               UpdateServerStatus();
-           });
-        };
-
-            _serialPort.ModemLinesChanged += () =>
-     {
-         App.Current.Dispatcher.Invoke(() =>
-                 {
-                     UpdateModemLineStatus();
-                 });
+      IsConnected = false;
+     ConnectCommand.NotifyCanExecuteChanged();
+     DisconnectCommand.NotifyCanExecuteChanged();
+         UpdateServerStatus();
+    });
      };
+
+   _serialPort.ModemLinesChanged += () =>
+   {
+   InvokeOnUiThread(() =>
+     {
+ UpdateModemLineStatus();
+         });
+   };
 
             // Load messages and reactions
             var loaded = MessageStore.Load();
@@ -254,31 +267,28 @@ namespace Quintilink.ViewModels
         [RelayCommand]
         private void RefreshSerialPorts()
         {
-            // Remember the currently selected port
-            string previousSelection = SelectedSerialPort;
+      string previousSelection = SelectedSerialPort;
 
             AvailableSerialPorts.Clear();
 
-            // Get ports and sort them numerically
-            var ports = SerialPortWrapper.GetAvailablePorts()
+   // Sort COM ports numerically
+   var ports = SerialPortWrapper.GetAvailablePorts()
             .OrderBy(port =>
    {
-       // Extract the numeric part from "COMx"
        if (port.StartsWith("COM") && int.TryParse(port.Substring(3), out int portNumber))
-           return portNumber;
-       return int.MaxValue; // Put non-standard port names at the end
+return portNumber;
+       return int.MaxValue;
    }).ToList();
 
             foreach (var port in ports)
             {
-                AvailableSerialPorts.Add(port);
+   AvailableSerialPorts.Add(port);
             }
 
-            // Restore the previous selection if it still exists
-            if (!string.IsNullOrEmpty(previousSelection) && AvailableSerialPorts.Contains(previousSelection))
-            {
-                SelectedSerialPort = previousSelection;
-            }
+ if (!string.IsNullOrEmpty(previousSelection) && AvailableSerialPorts.Contains(previousSelection))
+      {
+    SelectedSerialPort = previousSelection;
+    }
         }
 
         [RelayCommand(CanExecute = nameof(IsSerialConnected))]
@@ -383,7 +393,6 @@ namespace Quintilink.ViewModels
                        SelectedStopBits);
                     AppendLog($"[SYS] Serial port {SelectedSerialPort} opened at {SelectedBaudRate} baud");
 
-                    // Set connected state FIRST
                     IsConnected = true;
 
                     // Update modem line status
@@ -429,10 +438,8 @@ namespace Quintilink.ViewModels
                 _serialPort.Disconnect();
                 AppendLog("[SYS] Serial port closed");
 
-                // Clear modem line status
                 UpdateModemLineStatus();
 
-                // Notify command can execute changed
                 ToggleDtrCommand.NotifyCanExecuteChanged();
                 ToggleRtsCommand.NotifyCanExecuteChanged();
             }
@@ -484,42 +491,71 @@ namespace Quintilink.ViewModels
         }
 
         [RelayCommand]
-        private void AddMessage()
+        private async Task AddMessage()
         {
             var editor = new MessageEditorViewModel();
-            var dlg = new Views.MessageEditorWindow
-            {
-                DataContext = editor,
-                Owner = Application.Current.MainWindow,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner
-            };
 
-            if (dlg.ShowDialog() == true)
+            if (_dialogService != null)
             {
-                PredefinedMessages.Add(editor.ToDefinition());
-                SaveMessages();
+                var result = await _dialogService.ShowDialogAsync(editor);
+                if (result == true)
+                {
+                    PredefinedMessages.Add(editor.ToDefinition());
+                    SaveMessages();
+                }
+            }
+            else
+            {
+                var dlg = new Views.MessageEditorWindow
+                {
+                    DataContext = editor,
+                    Owner = Application.Current?.MainWindow,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+
+                if (dlg.ShowDialog() == true)
+                {
+                    PredefinedMessages.Add(editor.ToDefinition());
+                    SaveMessages();
+                }
             }
         }
 
-
         [RelayCommand]
-        private void EditMessage(MessageDefinition? message)
+        private async Task EditMessage(MessageDefinition? message)
         {
             if (message is null) return;
             var editor = new MessageEditorViewModel(message);
-            var dlg = new Views.MessageEditorWindow
+
+            if (_dialogService != null)
             {
-                DataContext = editor,
-                Owner = Application.Current.MainWindow,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner
-            };
-            if (dlg.ShowDialog() == true)
-            {
-                var index = PredefinedMessages.IndexOf(message);
-                if (index >= 0)
+                var result = await _dialogService.ShowDialogAsync(editor);
+                if (result == true)
                 {
-                    PredefinedMessages[index] = editor.ToDefinition();
-                    SaveMessages();
+                    var index = PredefinedMessages.IndexOf(message);
+                    if (index >= 0)
+                    {
+                        PredefinedMessages[index] = editor.ToDefinition();
+                        SaveMessages();
+                    }
+                }
+            }
+            else
+            {
+                var dlg = new Views.MessageEditorWindow
+                {
+                    DataContext = editor,
+                    Owner = Application.Current?.MainWindow,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+                if (dlg.ShowDialog() == true)
+                {
+                    var index = PredefinedMessages.IndexOf(message);
+                    if (index >= 0)
+                    {
+                        PredefinedMessages[index] = editor.ToDefinition();
+                        SaveMessages();
+                    }
                 }
             }
         }
@@ -536,36 +572,65 @@ namespace Quintilink.ViewModels
         }
 
         [RelayCommand]
-        private void AddReaction()
-        {
-            var vm = new ResponseEditorViewModel();
-            var dlg = new Views.ResponseEditorWindow { DataContext = vm, Owner = Application.Current.MainWindow };
-            vm.RequestClose += result => dlg.DialogResult = result;
+        private async Task AddReaction()
+  {
+        var vm = new ResponseEditorViewModel();
 
-            if (dlg.ShowDialog() == true)
-            {
-                _reactions[vm.Trigger] = vm.ToDefinition();
-                RefreshReactions();
-                SaveMessages();
-            }
-        }
+    if (_dialogService != null)
+     {
+     var result = await _dialogService.ShowDialogAsync(vm);
+       if (result == true)
+    {
+_reactions[vm.Trigger] = vm.ToDefinition();
+   RefreshReactions();
+  SaveMessages();
+     }
+   }
+   else
+   {
+       var dlg = new Views.ResponseEditorWindow { DataContext = vm, Owner = Application.Current?.MainWindow };
+      vm.RequestClose += result => dlg.DialogResult = result;
 
-        [RelayCommand]
-        private void EditReaction(KeyValuePair<string, MessageDefinition>? item)
-        {
-            if (item is null) return;
+       if (dlg.ShowDialog() == true)
+       {
+      _reactions[vm.Trigger] = vm.ToDefinition();
+      RefreshReactions();
+    SaveMessages();
+    }
+ }
+ }
 
-            var vm = new ResponseEditorViewModel(item.Value.Key, item.Value.Value);
-            var dlg = new Views.ResponseEditorWindow { DataContext = vm, Owner = Application.Current.MainWindow };
-            vm.RequestClose += result => dlg.DialogResult = result;
+  [RelayCommand]
+   private async Task EditReaction(KeyValuePair<string, MessageDefinition>? item)
+  {
+   if (item is null) return;
 
-            if (dlg.ShowDialog() == true)
-            {
-                _reactions.Remove(item.Value.Key);
-                _reactions[vm.Trigger] = vm.ToDefinition();
-                RefreshReactions();
-                SaveMessages();
-            }
+ var vm = new ResponseEditorViewModel(item.Value.Key, item.Value.Value);
+
+      if (_dialogService != null)
+   {
+      var result = await _dialogService.ShowDialogAsync(vm);
+   if (result == true)
+      {
+_reactions.Remove(item.Value.Key);
+      _reactions[vm.Trigger] = vm.ToDefinition();
+     RefreshReactions();
+    SaveMessages();
+   }
+   }
+ else
+     {
+  var dlg = new Views.ResponseEditorWindow { DataContext = vm, Owner = Application.Current?.MainWindow };
+      vm.RequestClose += result => dlg.DialogResult = result;
+
+      if (dlg.ShowDialog() == true)
+      {
+      _reactions.Remove(item.Value.Key);
+      _reactions[vm.Trigger] = vm.ToDefinition();
+       RefreshReactions();
+     SaveMessages();
+       }
+  }
         }
 
         [RelayCommand]
@@ -639,28 +704,43 @@ namespace Quintilink.ViewModels
 
         private void AppendLog(string entry)
         {
-            string timestamp = DateTime.Now.ToString("HH:mm:ss");
-            Application.Current.Dispatcher.Invoke(() =>
-                  {
-                      // Determine if this is an ASCII line
-                      bool isAsciiLine = entry.StartsWith("[RX] ASCII:") || entry.StartsWith("[TX] ASCII:");
+        string timestamp = DateTime.Now.ToString("HH:mm:ss");
+      InvokeOnUiThread(() =>
+  {
+    // Determine if this is an ASCII line
+   bool isAsciiLine = entry.StartsWith("[RX] ASCII:") || entry.StartsWith("[TX] ASCII:");
 
-                      // Extract prefix and content
-                      string prefix = "";
-                      string content = entry;
+     // Extract prefix and content
+    string prefix = "";
+   string content = entry;
 
-                      if (entry.StartsWith("["))
-                      {
-                          int endBracket = entry.IndexOf(']');
-                          if (endBracket > 0)
-                          {
-                              prefix = entry.Substring(0, endBracket + 1) + " ";
-                              content = entry.Substring(endBracket + 2);
-                          }
-                      }
+     if (entry.StartsWith("["))
+       {
+     int endBracket = entry.IndexOf(']');
+        if (endBracket > 0)
+ {
+    prefix = entry.Substring(0, endBracket + 1) + " ";
+    content = entry.Substring(endBracket + 2);
+     }
+    }
 
-                      LogHelper.AppendLogEntry(logDocument, timestamp, prefix, content, isAsciiLine);
-                  });
+  LogHelper.AppendLogEntry(logDocument, timestamp, prefix, content, isAsciiLine);
+  });
+     }
+
+  /// <summary>
+        /// Helper method to invoke actions on the UI thread
+  /// </summary>
+        private void InvokeOnUiThread(Action action)
+        {
+ if (_dispatcherService != null)
+      {
+  _dispatcherService.Invoke(action);
+  }
+ else
+  {
+       Application.Current?.Dispatcher?.Invoke(action);
+    }
         }
     }
 }

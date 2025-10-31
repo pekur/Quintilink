@@ -5,17 +5,15 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:Quintilink.ViewModels"
-        xmlns:converters="clr-namespace:Quintilink.Converters"
-        xmlns:local="clr-namespace:Quintilink.Behaviors"
+      xmlns:converters="clr-namespace:Quintilink.Converters"
+    xmlns:local="clr-namespace:Quintilink.Behaviors"
         mc:Ignorable="d"
   Title="TCP Tester" Height="500" Width="1100"
    Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
-        ExtendsContentIntoTitleBar="True"
+  ExtendsContentIntoTitleBar="True"
   WindowStyle="None"
-    ResizeMode="CanResize">
-    <ui:FluentWindow.DataContext>
-        <vm:MainViewModel />
-    </ui:FluentWindow.DataContext>
+    ResizeMode="CanResize"
+         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}">
 
     <ui:FluentWindow.Resources>
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
@@ -401,20 +399,48 @@
                         </TabItem.Header>
 
                         <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+             <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+         <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
 
-                            <ListBox x:Name="msgList" ItemsSource="{Binding PredefinedMessages}" DisplayMemberPath="Name" Margin="0,0,0,10" MouseDoubleClick="MsgList_MouseDoubleClick" BorderBrush="#DDD" BorderThickness="1" 
-                                VerticalContentAlignment="Stretch" VerticalAlignment="Stretch">
-                                <ListBox.ItemContainerStyle>
-                                    <Style TargetType="ListBoxItem">
-                                        <Setter Property="Padding" Value="2,2"/>
-                                        <Setter Property="Margin" Value="0"/>
-                                    </Style>
-                                </ListBox.ItemContainerStyle>
-                            </ListBox>
+      <ListBox x:Name="msgList" ItemsSource="{Binding PredefinedMessages}" Margin="0,0,0,10" BorderBrush="#DDD" BorderThickness="1" 
+    VerticalContentAlignment="Stretch" VerticalAlignment="Stretch">
+            <ListBox.ItemContainerStyle>
+       <Style TargetType="ListBoxItem">
+          <Setter Property="Padding" Value="5,3"/>
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+           <EventSetter Event="MouseDoubleClick" Handler="ListBoxItem_MouseDoubleClick"/>
+</Style>
+  </ListBox.ItemContainerStyle>
+ <ListBox.ItemTemplate>
+    <DataTemplate>
+  <Grid>
+         <Grid.RowDefinitions>
+   <RowDefinition Height="Auto"/>
+           <RowDefinition Height="Auto"/>
+     <RowDefinition Height="Auto"/>
+             </Grid.RowDefinitions>
+
+        <!-- Name (bold) -->
+        <TextBlock Grid.Row="0" Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
+
+   <!-- ASCII -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,2,0,0">
+  <TextBlock Text="ASCII: " FontSize="11" Foreground="Gray"/>
+        <TextBlock Text="{Binding DisplayAscii}" FontSize="11" FontFamily="Consolas"/>
+      </StackPanel>
+
+            <!-- HEX -->
+         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,2,0,0">
+       <TextBlock Text="HEX: " FontSize="11" Foreground="Gray"/>
+        <TextBlock Text="{Binding DisplayHex}" FontSize="11" FontFamily="Consolas"/>
+     </StackPanel>
+         </Grid>
+      </DataTemplate>
+    </ListBox.ItemTemplate>
+       </ListBox>
 
                             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
                                 <ui:Button Command="{Binding SendMessageCommand}" CommandParameter="{Binding SelectedItem, ElementName=msgList}" ToolTip="Send predefined message"
@@ -447,20 +473,54 @@
                         </TabItem.Header>
 
                         <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+    <Grid.RowDefinitions>
+<RowDefinition Height="*"/>
+        <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-                            <ListView ItemsSource="{Binding Reactions}" Margin="0,0,0,10" BorderBrush="#DDD" BorderThickness="1" x:Name="reactionsList">
-                                <ListView.View>
-                                    <GridView>
-                                        <GridViewColumn Header="Trigger (HEX)" DisplayMemberBinding="{Binding Key}" Width="Auto"/>
-                                        <GridViewColumn Header="Response" DisplayMemberBinding="{Binding Value.Name}" Width="Auto"/>
-                                        <GridViewColumn Header="Response HEX" DisplayMemberBinding="{Binding Value.Content}" Width="Auto"/>
-                                    </GridView>
-                                </ListView.View>
-                            </ListView>
+          <ListBox ItemsSource="{Binding Reactions}" Margin="0,0,0,10" BorderBrush="#DDD" BorderThickness="1" x:Name="reactionsList"
+          VerticalContentAlignment="Stretch" VerticalAlignment="Stretch">
+   <ListBox.ItemContainerStyle>
+        <Style TargetType="ListBoxItem">
+        <Setter Property="Padding" Value="5,3"/>
+              <Setter Property="Margin" Value="0"/>
+     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+  </Style>
+        </ListBox.ItemContainerStyle>
+    <ListBox.ItemTemplate>
+      <DataTemplate>
+      <Grid>
+      <Grid.RowDefinitions>
+<RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+       <RowDefinition Height="Auto"/>
+     <RowDefinition Height="Auto"/>
+  </Grid.RowDefinitions>
+
+       <!-- Response Name (bold) -->
+     <TextBlock Grid.Row="0" Text="{Binding Value.Name}" FontWeight="SemiBold" FontSize="13"/>
+
+        <!-- Trigger HEX -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,2,0,0">
+     <TextBlock Text="Trigger: " FontSize="11" Foreground="Gray"/>
+       <TextBlock Text="{Binding Key}" FontSize="11" FontFamily="Consolas"/>
+        </StackPanel>
+
+     <!-- Response ASCII -->
+      <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,2,0,0">
+           <TextBlock Text="ASCII: " FontSize="11" Foreground="Gray"/>
+                <TextBlock Text="{Binding Value.DisplayAscii}" FontSize="11" FontFamily="Consolas"/>
+           </StackPanel>
+
+      <!-- Response HEX -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,2,0,0">
+  <TextBlock Text="HEX: " FontSize="11" Foreground="Gray"/>
+         <TextBlock Text="{Binding Value.DisplayHex}" FontSize="11" FontFamily="Consolas"/>
+    </StackPanel>
+ </Grid>
+ </DataTemplate>
+   </ListBox.ItemTemplate>
+   </ListBox>
 
                             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
                                 <ui:Button Command="{Binding AddReactionCommand}" ToolTip="Add reaction"

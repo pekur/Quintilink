@@ -27,17 +27,14 @@ namespace Quintilink.Views
             InitializeComponent();
         }
 
-        private void MsgList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void ListBoxItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (sender is not ListBox listBox) return;
-
-            // Ensure the double-click happened on a real item
-            var container = ItemsControl.ContainerFromElement(listBox, (DependencyObject)e.OriginalSource) as ListBoxItem;
-            if (container?.DataContext is not MessageDefinition msg) return;
-
-            if (DataContext is MainViewModel vm && vm.SendMessageCommand.CanExecute(msg))
+            if (sender is ListBoxItem item && item.DataContext is MessageDefinition msg)
             {
-                vm.SendMessageCommand.Execute(msg);
+                if (DataContext is MainViewModel vm && vm.SendMessageCommand.CanExecute(msg))
+                {
+                    vm.SendMessageCommand.Execute(msg);
+                }
             }
         }
     }
