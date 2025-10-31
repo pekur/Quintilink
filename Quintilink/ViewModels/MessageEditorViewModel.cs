@@ -36,7 +36,8 @@ namespace Quintilink.ViewModels
         {
             Name = def.Name;
             Hex = MessageDefinition.ToSpacedHex(def.GetBytes());
-            Ascii = Encoding.ASCII.GetString(def.GetBytes());
+            // Use macro-based ASCII representation
+            Ascii = CollapseToAscii(def.GetBytes());
         }
 
         partial void OnAsciiChanged(string value)
@@ -98,9 +99,13 @@ namespace Quintilink.ViewModels
                     if (end > i)
                     {
                         string macro = ascii.Substring(i, end - i + 1);
-                        output.AddRange(MacroDefinitions.ExpandMacro(macro));
-                        i = end;
-                        continue;
+                        var expanded = MacroDefinitions.ExpandMacro(macro);
+                        if (expanded.Length > 0)
+                        {
+                            output.AddRange(expanded);
+                            i = end;
+                            continue;
+                        }
                     }
                 }
                 output.Add((byte)ascii[i]);
