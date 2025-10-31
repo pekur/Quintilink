@@ -189,11 +189,11 @@ namespace Quintilink.ViewModels
       {
           string hex = BitConverter.ToString(data).Replace("-", " ");
           string ascii = ConvertToReadableAscii(data);
-            InvokeOnUiThread(() =>
-        {
-       AppendLog($"[RX] {endpoint} : {hex} (ASCII: {ascii})");
+          InvokeOnUiThread(() =>
+      {
+          AppendLog($"[RX] {endpoint} : {hex} (ASCII: {ascii})");
       });
-     await CheckReaction(hex);
+          await CheckReaction(hex);
       };
 
             _server.ClientConnected += endpoint =>
@@ -215,24 +215,24 @@ namespace Quintilink.ViewModels
         {
             InvokeOnUiThread(() =>
     {
-  AppendLog(remote
-  ? "[SYS] Serial port disconnected (error)"
-      : "[SYS] Serial port disconnected");
+        AppendLog(remote
+        ? "[SYS] Serial port disconnected (error)"
+            : "[SYS] Serial port disconnected");
 
-      IsConnected = false;
-     ConnectCommand.NotifyCanExecuteChanged();
-     DisconnectCommand.NotifyCanExecuteChanged();
-         UpdateServerStatus();
+        IsConnected = false;
+        ConnectCommand.NotifyCanExecuteChanged();
+        DisconnectCommand.NotifyCanExecuteChanged();
+        UpdateServerStatus();
     });
-     };
+        };
 
-   _serialPort.ModemLinesChanged += () =>
-   {
-   InvokeOnUiThread(() =>
-     {
- UpdateModemLineStatus();
-         });
-   };
+            _serialPort.ModemLinesChanged += () =>
+            {
+                InvokeOnUiThread(() =>
+         {
+                  UpdateModemLineStatus();
+              });
+            };
 
             // Load messages and reactions
             var loaded = MessageStore.Load();
@@ -267,28 +267,28 @@ namespace Quintilink.ViewModels
         [RelayCommand]
         private void RefreshSerialPorts()
         {
-      string previousSelection = SelectedSerialPort;
+            string previousSelection = SelectedSerialPort;
 
             AvailableSerialPorts.Clear();
 
-   // Sort COM ports numerically
-   var ports = SerialPortWrapper.GetAvailablePorts()
-            .OrderBy(port =>
-   {
-       if (port.StartsWith("COM") && int.TryParse(port.Substring(3), out int portNumber))
-return portNumber;
-       return int.MaxValue;
-   }).ToList();
+            // Sort COM ports numerically
+            var ports = SerialPortWrapper.GetAvailablePorts()
+                     .OrderBy(port =>
+            {
+                if (port.StartsWith("COM") && int.TryParse(port.Substring(3), out int portNumber))
+                    return portNumber;
+                return int.MaxValue;
+            }).ToList();
 
             foreach (var port in ports)
             {
-   AvailableSerialPorts.Add(port);
+                AvailableSerialPorts.Add(port);
             }
 
- if (!string.IsNullOrEmpty(previousSelection) && AvailableSerialPorts.Contains(previousSelection))
-      {
-    SelectedSerialPort = previousSelection;
-    }
+            if (!string.IsNullOrEmpty(previousSelection) && AvailableSerialPorts.Contains(previousSelection))
+            {
+                SelectedSerialPort = previousSelection;
+            }
         }
 
         [RelayCommand(CanExecute = nameof(IsSerialConnected))]
@@ -573,64 +573,64 @@ return portNumber;
 
         [RelayCommand]
         private async Task AddReaction()
-  {
-        var vm = new ResponseEditorViewModel();
+        {
+            var vm = new ResponseEditorViewModel();
 
-    if (_dialogService != null)
-     {
-     var result = await _dialogService.ShowDialogAsync(vm);
-       if (result == true)
-    {
-_reactions[vm.Trigger] = vm.ToDefinition();
-   RefreshReactions();
-  SaveMessages();
-     }
-   }
-   else
-   {
-       var dlg = new Views.ResponseEditorWindow { DataContext = vm, Owner = Application.Current?.MainWindow };
-      vm.RequestClose += result => dlg.DialogResult = result;
+            if (_dialogService != null)
+            {
+                var result = await _dialogService.ShowDialogAsync(vm);
+                if (result == true)
+                {
+                    _reactions[vm.Trigger] = vm.ToDefinition();
+                    RefreshReactions();
+                    SaveMessages();
+                }
+            }
+            else
+            {
+                var dlg = new Views.ResponseEditorWindow { DataContext = vm, Owner = Application.Current?.MainWindow };
+                vm.RequestClose += result => dlg.DialogResult = result;
 
-       if (dlg.ShowDialog() == true)
-       {
-      _reactions[vm.Trigger] = vm.ToDefinition();
-      RefreshReactions();
-    SaveMessages();
-    }
- }
- }
+                if (dlg.ShowDialog() == true)
+                {
+                    _reactions[vm.Trigger] = vm.ToDefinition();
+                    RefreshReactions();
+                    SaveMessages();
+                }
+            }
+        }
 
-  [RelayCommand]
-   private async Task EditReaction(KeyValuePair<string, MessageDefinition>? item)
-  {
-   if (item is null) return;
+        [RelayCommand]
+        private async Task EditReaction(KeyValuePair<string, MessageDefinition>? item)
+        {
+            if (item is null) return;
 
- var vm = new ResponseEditorViewModel(item.Value.Key, item.Value.Value);
+            var vm = new ResponseEditorViewModel(item.Value.Key, item.Value.Value);
 
-      if (_dialogService != null)
-   {
-      var result = await _dialogService.ShowDialogAsync(vm);
-   if (result == true)
-      {
-_reactions.Remove(item.Value.Key);
-      _reactions[vm.Trigger] = vm.ToDefinition();
-     RefreshReactions();
-    SaveMessages();
-   }
-   }
- else
-     {
-  var dlg = new Views.ResponseEditorWindow { DataContext = vm, Owner = Application.Current?.MainWindow };
-      vm.RequestClose += result => dlg.DialogResult = result;
+            if (_dialogService != null)
+            {
+                var result = await _dialogService.ShowDialogAsync(vm);
+                if (result == true)
+                {
+                    _reactions.Remove(item.Value.Key);
+                    _reactions[vm.Trigger] = vm.ToDefinition();
+                    RefreshReactions();
+                    SaveMessages();
+                }
+            }
+            else
+            {
+                var dlg = new Views.ResponseEditorWindow { DataContext = vm, Owner = Application.Current?.MainWindow };
+                vm.RequestClose += result => dlg.DialogResult = result;
 
-      if (dlg.ShowDialog() == true)
-      {
-      _reactions.Remove(item.Value.Key);
-      _reactions[vm.Trigger] = vm.ToDefinition();
-       RefreshReactions();
-     SaveMessages();
-       }
-  }
+                if (dlg.ShowDialog() == true)
+                {
+                    _reactions.Remove(item.Value.Key);
+                    _reactions[vm.Trigger] = vm.ToDefinition();
+                    RefreshReactions();
+                    SaveMessages();
+                }
+            }
         }
 
         [RelayCommand]
@@ -704,43 +704,43 @@ _reactions.Remove(item.Value.Key);
 
         private void AppendLog(string entry)
         {
-        string timestamp = DateTime.Now.ToString("HH:mm:ss");
-      InvokeOnUiThread(() =>
-  {
-    // Determine if this is an ASCII line
-   bool isAsciiLine = entry.StartsWith("[RX] ASCII:") || entry.StartsWith("[TX] ASCII:");
+            string timestamp = DateTime.Now.ToString("HH:mm:ss");
+            InvokeOnUiThread(() =>
+        {
+            // Determine if this is an ASCII line
+            bool isAsciiLine = entry.StartsWith("[RX] ASCII:") || entry.StartsWith("[TX] ASCII:");
 
-     // Extract prefix and content
-    string prefix = "";
-   string content = entry;
+            // Extract prefix and content
+            string prefix = "";
+            string content = entry;
 
-     if (entry.StartsWith("["))
-       {
-     int endBracket = entry.IndexOf(']');
-        if (endBracket > 0)
- {
-    prefix = entry.Substring(0, endBracket + 1) + " ";
-    content = entry.Substring(endBracket + 2);
-     }
-    }
+            if (entry.StartsWith("["))
+            {
+                int endBracket = entry.IndexOf(']');
+                if (endBracket > 0)
+                {
+                    prefix = entry.Substring(0, endBracket + 1) + " ";
+                    content = entry.Substring(endBracket + 2);
+                }
+            }
 
-  LogHelper.AppendLogEntry(logDocument, timestamp, prefix, content, isAsciiLine);
-  });
-     }
+            LogHelper.AppendLogEntry(logDocument, timestamp, prefix, content, isAsciiLine);
+        });
+        }
 
-  /// <summary>
+        /// <summary>
         /// Helper method to invoke actions on the UI thread
-  /// </summary>
+        /// </summary>
         private void InvokeOnUiThread(Action action)
         {
- if (_dispatcherService != null)
-      {
-  _dispatcherService.Invoke(action);
-  }
- else
-  {
-       Application.Current?.Dispatcher?.Invoke(action);
-    }
+            if (_dispatcherService != null)
+            {
+                _dispatcherService.Invoke(action);
+            }
+            else
+            {
+                Application.Current?.Dispatcher?.Invoke(action);
+            }
         }
     }
 }

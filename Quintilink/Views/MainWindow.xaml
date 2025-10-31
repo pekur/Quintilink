@@ -339,14 +339,24 @@
                             <StackPanel Orientation="Horizontal" Margin="8,0,0,0">
                                 <Button Command="{Binding ToggleDtrCommand}" ToolTip="Toggle DTR (Data Terminal Ready)" Padding="5,2" Margin="0,0,4,0" FontSize="10" Height="24" MinWidth="38">
                                     <Button.Style>
-                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                        <Style TargetType="Button">
                                             <Setter Property="Content" Value="DTR"/>
                                             <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="Background" Value="{DynamicResource ButtonBackground}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource ButtonForeground}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding DtrEnabled}" Value="True">
                                                     <Setter Property="Background" Value="LimeGreen"/>
                                                     <Setter Property="Foreground" Value="White"/>
                                                 </DataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding DtrEnabled}" Value="True"/>
+                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Background" Value="#228B22"/>
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </MultiDataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
@@ -354,14 +364,24 @@
 
                                 <Button Command="{Binding ToggleRtsCommand}" ToolTip="Toggle RTS (Request To Send)" Padding="5,2" FontSize="10" Height="24" MinWidth="38">
                                     <Button.Style>
-                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                        <Style TargetType="Button">
                                             <Setter Property="Content" Value="RTS"/>
                                             <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="Background" Value="{DynamicResource ButtonBackground}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource ButtonForeground}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding RtsEnabled}" Value="True">
                                                     <Setter Property="Background" Value="LimeGreen"/>
                                                     <Setter Property="Foreground" Value="White"/>
                                                 </DataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding RtsEnabled}" Value="True"/>
+                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Background" Value="#228B22"/>
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </MultiDataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
@@ -399,48 +419,48 @@
                         </TabItem.Header>
 
                         <Grid>
-             <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-         <RowDefinition Height="Auto"/>
-    </Grid.RowDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-      <ListBox x:Name="msgList" ItemsSource="{Binding PredefinedMessages}" Margin="0,0,0,10" BorderBrush="#DDD" BorderThickness="1" 
+                            <ListBox x:Name="msgList" ItemsSource="{Binding PredefinedMessages}" Margin="0,0,0,10" BorderBrush="#DDD" BorderThickness="1" 
     VerticalContentAlignment="Stretch" VerticalAlignment="Stretch">
-            <ListBox.ItemContainerStyle>
-       <Style TargetType="ListBoxItem">
-          <Setter Property="Padding" Value="5,3"/>
-        <Setter Property="Margin" Value="0"/>
-        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-           <EventSetter Event="MouseDoubleClick" Handler="ListBoxItem_MouseDoubleClick"/>
-</Style>
-  </ListBox.ItemContainerStyle>
- <ListBox.ItemTemplate>
-    <DataTemplate>
-  <Grid>
-         <Grid.RowDefinitions>
-   <RowDefinition Height="Auto"/>
-           <RowDefinition Height="Auto"/>
-     <RowDefinition Height="Auto"/>
-             </Grid.RowDefinitions>
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Padding" Value="5,3"/>
+                                        <Setter Property="Margin" Value="0"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                        <EventSetter Event="MouseDoubleClick" Handler="ListBoxItem_MouseDoubleClick"/>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
 
-        <!-- Name (bold) -->
-        <TextBlock Grid.Row="0" Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
+                                            <!-- Name (bold) -->
+                                            <TextBlock Grid.Row="0" Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
 
-   <!-- ASCII -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,2,0,0">
-  <TextBlock Text="ASCII: " FontSize="11" Foreground="Gray"/>
-        <TextBlock Text="{Binding DisplayAscii}" FontSize="11" FontFamily="Consolas"/>
-      </StackPanel>
+                                            <!-- ASCII -->
+                                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,2,0,0">
+                                                <TextBlock Text="ASCII: " FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="{Binding DisplayAscii}" FontSize="11" FontFamily="Consolas"/>
+                                            </StackPanel>
 
-            <!-- HEX -->
-         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,2,0,0">
-       <TextBlock Text="HEX: " FontSize="11" Foreground="Gray"/>
-        <TextBlock Text="{Binding DisplayHex}" FontSize="11" FontFamily="Consolas"/>
-     </StackPanel>
-         </Grid>
-      </DataTemplate>
-    </ListBox.ItemTemplate>
-       </ListBox>
+                                            <!-- HEX -->
+                                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,2,0,0">
+                                                <TextBlock Text="HEX: " FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="{Binding DisplayHex}" FontSize="11" FontFamily="Consolas"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
 
                             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
                                 <ui:Button Command="{Binding SendMessageCommand}" CommandParameter="{Binding SelectedItem, ElementName=msgList}" ToolTip="Send predefined message"
@@ -473,54 +493,54 @@
                         </TabItem.Header>
 
                         <Grid>
-    <Grid.RowDefinitions>
-<RowDefinition Height="*"/>
-        <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-          <ListBox ItemsSource="{Binding Reactions}" Margin="0,0,0,10" BorderBrush="#DDD" BorderThickness="1" x:Name="reactionsList"
+                            <ListBox ItemsSource="{Binding Reactions}" Margin="0,0,0,10" BorderBrush="#DDD" BorderThickness="1" x:Name="reactionsList"
           VerticalContentAlignment="Stretch" VerticalAlignment="Stretch">
-   <ListBox.ItemContainerStyle>
-        <Style TargetType="ListBoxItem">
-        <Setter Property="Padding" Value="5,3"/>
-              <Setter Property="Margin" Value="0"/>
-     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-  </Style>
-        </ListBox.ItemContainerStyle>
-    <ListBox.ItemTemplate>
-      <DataTemplate>
-      <Grid>
-      <Grid.RowDefinitions>
-<RowDefinition Height="Auto"/>
-      <RowDefinition Height="Auto"/>
-       <RowDefinition Height="Auto"/>
-     <RowDefinition Height="Auto"/>
-  </Grid.RowDefinitions>
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Padding" Value="5,3"/>
+                                        <Setter Property="Margin" Value="0"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
 
-       <!-- Response Name (bold) -->
-     <TextBlock Grid.Row="0" Text="{Binding Value.Name}" FontWeight="SemiBold" FontSize="13"/>
+                                            <!-- Response Name (bold) -->
+                                            <TextBlock Grid.Row="0" Text="{Binding Value.Name}" FontWeight="SemiBold" FontSize="13"/>
 
-        <!-- Trigger HEX -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,2,0,0">
-     <TextBlock Text="Trigger: " FontSize="11" Foreground="Gray"/>
-       <TextBlock Text="{Binding Key}" FontSize="11" FontFamily="Consolas"/>
-        </StackPanel>
+                                            <!-- Trigger HEX -->
+                                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,2,0,0">
+                                                <TextBlock Text="Trigger: " FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="{Binding Key}" FontSize="11" FontFamily="Consolas"/>
+                                            </StackPanel>
 
-     <!-- Response ASCII -->
-      <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,2,0,0">
-           <TextBlock Text="ASCII: " FontSize="11" Foreground="Gray"/>
-                <TextBlock Text="{Binding Value.DisplayAscii}" FontSize="11" FontFamily="Consolas"/>
-           </StackPanel>
+                                            <!-- Response ASCII -->
+                                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,2,0,0">
+                                                <TextBlock Text="ASCII: " FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="{Binding Value.DisplayAscii}" FontSize="11" FontFamily="Consolas"/>
+                                            </StackPanel>
 
-      <!-- Response HEX -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,2,0,0">
-  <TextBlock Text="HEX: " FontSize="11" Foreground="Gray"/>
-         <TextBlock Text="{Binding Value.DisplayHex}" FontSize="11" FontFamily="Consolas"/>
-    </StackPanel>
- </Grid>
- </DataTemplate>
-   </ListBox.ItemTemplate>
-   </ListBox>
+                                            <!-- Response HEX -->
+                                            <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,2,0,0">
+                                                <TextBlock Text="HEX: " FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="{Binding Value.DisplayHex}" FontSize="11" FontFamily="Consolas"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
 
                             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
                                 <ui:Button Command="{Binding AddReactionCommand}" ToolTip="Add reaction"
