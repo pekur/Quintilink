@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
+using Quintilink.Models;
 
 public class MessageDefinition
 {
@@ -28,6 +29,44 @@ public class MessageDefinition
     public string GetAscii()
     {
         return Encoding.ASCII.GetString(GetBytes());
+    }
+
+    // Property for displaying formatted ASCII with macros
+    public string DisplayAscii
+    {
+        get
+        {
+            try
+            {
+                var bytes = GetBytes();
+                var sb = new StringBuilder();
+                foreach (var b in bytes)
+                {
+                    sb.Append(MacroDefinitions.CollapseByte(b));
+                }
+                return sb.ToString();
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+    }
+
+    // Property for displaying spaced HEX
+    public string DisplayHex
+    {
+        get
+        {
+            try
+            {
+                return ToSpacedHex(GetBytes());
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
     }
 
     public static string ToSpacedHex(byte[] bytes) =>
