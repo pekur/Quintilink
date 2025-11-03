@@ -567,8 +567,16 @@ namespace Quintilink.ViewModels
             {
                 PredefinedMessages.Remove(message);
                 SaveMessages();
-
             }
+        }
+
+        [RelayCommand]
+        private void ClearLog()
+        {
+            InvokeOnUiThread(() =>
+ {
+    logDocument.Blocks.Clear();
+          });
         }
 
         [RelayCommand]
