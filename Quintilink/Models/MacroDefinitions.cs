@@ -19,7 +19,6 @@ namespace Quintilink.Models
             { "<BELL>", new byte[] { 0x07 } },
 
             { "<BS>",  new byte[] { 0x08 } }, // Backspace
-            { "<BACKSPACE>", new byte[] { 0x08 } },
 
             { "<HT>",  new byte[] { 0x09 } }, // Horizontal Tab
             { "<TAB>", new byte[] { 0x09 } },
@@ -29,7 +28,6 @@ namespace Quintilink.Models
 
             { "<VT>",  new byte[] { 0x0B } }, // Vertical Tab
             { "<FF>",  new byte[] { 0x0C } }, // Form Feed
-            { "<FORMFEED>", new byte[] { 0x0C } },
 
             { "<CR>",  new byte[] { 0x0D } }, // Carriage Return
 
@@ -59,7 +57,6 @@ namespace Quintilink.Models
 
             // Space (printable)
             { "<SP>",    new byte[] { 0x20 } },
-            { "<SPACE>", new byte[] { 0x20 } },
 
             // DEL
             { "<DEL>", new byte[] { 0x7F } },
