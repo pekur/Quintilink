@@ -35,7 +35,7 @@
                 <!-- Section 1: Connection Mode Selection -->
                 <Border BorderThickness="0" Padding="5" Margin="0,0,10,5">
                     <StackPanel Orientation="Horizontal">
-                        <RadioButton Content="TCP Client" GroupName="ConnectionMode" Margin="0,0,10,0" VerticalAlignment="Center">
+                        <RadioButton Content="TCP Client" GroupName="ConnectionMode" Margin="0,0,0,0" VerticalAlignment="Center">
                             <RadioButton.Style>
                                 <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
                                     <Setter Property="IsChecked" Value="True"/>
@@ -55,7 +55,7 @@
                             </RadioButton.Style>
                         </RadioButton>
 
-                        <RadioButton Content="TCP Server" IsChecked="{Binding IsServerMode}" GroupName="ConnectionMode" Margin="0,0,10,0" VerticalAlignment="Center">
+                        <RadioButton Content="TCP Server" IsChecked="{Binding IsServerMode}" GroupName="ConnectionMode" Margin="0,0,0,0" VerticalAlignment="Center">
                             <RadioButton.Style>
                                 <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
                                     <Setter Property="IsEnabled" Value="True"/>
