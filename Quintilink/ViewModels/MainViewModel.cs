@@ -155,7 +155,7 @@ namespace Quintilink.ViewModels
             = new ObservableCollection<KeyValuePair<string, MessageDefinition>>();
 
         [ObservableProperty]
-        public string title = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
+        public string title = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name ?? string.Empty;
 
         // Parameterless constructor for XAML designer support
         public MainViewModel() : this(null, null)
@@ -230,8 +230,8 @@ namespace Quintilink.ViewModels
             {
                 InvokeOnUiThread(() =>
          {
-                  UpdateModemLineStatus();
-              });
+             UpdateModemLineStatus();
+         });
             };
 
             // Load messages and reactions
@@ -574,9 +574,9 @@ namespace Quintilink.ViewModels
         private void ClearLog()
         {
             InvokeOnUiThread(() =>
- {
-    logDocument.Blocks.Clear();
-          });
+            {
+                logDocument.Blocks.Clear();
+            });
         }
 
         [RelayCommand]
