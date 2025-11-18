@@ -459,7 +459,7 @@ namespace Quintilink.ViewModels
             UpdateServerStatus();
         }
 
-        private bool CanConnect() => !IsConnected;
+        private bool CanConnect() => !IsConnected && (!IsSerialMode || !string.IsNullOrEmpty(SelectedSerialPort));
         private bool CanDisconnect() => IsConnected;
 
         [RelayCommand]
