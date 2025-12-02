@@ -164,7 +164,7 @@ public partial class ResponseEditorViewModel : ObservableObject
 
     private static string CollapseToAscii(byte[] bytes)
     {
-        var sb = new StringBuilder();
+        var sb = new StringBuilder(bytes.Length * 2);
         foreach (var b in bytes)
             sb.Append(MacroDefinitions.CollapseByte(b));
         return sb.ToString();
@@ -174,9 +174,27 @@ public partial class ResponseEditorViewModel : ObservableObject
     {
         var clean = Regex.Replace(hex ?? string.Empty, @"[^0-9A-Fa-f]", "");
         if (clean.Length % 2 != 0) return Array.Empty<byte>();
-        return Enumerable.Range(0, clean.Length / 2)
-                 .Select(i => Convert.ToByte(clean.Substring(i * 2, 2), 16))
-          .ToArray();
+        
+        int byteCount = clean.Length / 2;
+        byte[] result = new byte[byteCount];
+
+        for (int i = 0; i < byteCount; i++)
+        {
+            int pos = i * 2;
+            int high = HexCharToValue(clean[pos]);
+            int low = HexCharToValue(clean[pos + 1]);
+            result[i] = (byte)((high << 4) | low);
+        }
+
+        return result;
+    }
+
+    private static int HexCharToValue(char c)
+    {
+        if (c >= '0' && c <= '9') return c - '0';
+        if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+        if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+        return 0;
     }
 
     private static string NormalizeHex(string input)

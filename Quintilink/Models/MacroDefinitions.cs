@@ -62,6 +62,35 @@ namespace Quintilink.Models
             { "<DEL>", new byte[] { 0x7F } },
         };
 
+        // Reverse lookup array: byte value -> macro string (O(1) lookup)
+        private static readonly string?[] _byteToMacro = new string?[256];
+        
+        // Cache for single-character strings to avoid allocations for printable ASCII
+        private static readonly string[] _singleCharCache = new string[95]; // 0x20-0x7E range
+
+        static MacroDefinitions()
+        {
+            // Build reverse lookup array at startup
+            foreach (var kvp in _macros)
+            {
+                if (kvp.Value.Length == 1)
+                {
+                    byte b = kvp.Value[0];
+                    // Prefer shorter macro names (e.g., <CR> over <NL>)
+                    if (_byteToMacro[b] == null || kvp.Key.Length < _byteToMacro[b]!.Length)
+                    {
+                        _byteToMacro[b] = kvp.Key;
+                    }
+                }
+            }
+            
+            // Pre-cache single-character strings for printable ASCII
+            for (int i = 0; i < 95; i++)
+            {
+                _singleCharCache[i] = ((char)(i + 0x20)).ToString();
+            }
+        }
+
         public static byte[] ExpandMacro(string macro)
         {
             return _macros.TryGetValue(macro, out var bytes) ? bytes : Array.Empty<byte>();
@@ -69,17 +98,14 @@ namespace Quintilink.Models
 
         public static string CollapseByte(byte b)
         {
-            foreach (var kvp in _macros)
-            {
-                if (kvp.Value.Length == 1 && kvp.Value[0] == b)
-                {
-                    return kvp.Key;
-                }
-            }
+            // O(1) lookup in reverse array
+            var macro = _byteToMacro[b];
+            if (macro != null)
+                return macro;
 
-            // Printable ASCII
+            // Printable ASCII - use cached single-char strings
             if (b >= 0x20 && b <= 0x7E)
-                return ((char)b).ToString();
+                return _singleCharCache[b - 0x20];
 
             // Otherwise fallback
             return $"[{b:X2}]";

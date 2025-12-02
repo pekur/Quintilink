@@ -673,7 +673,7 @@ namespace Quintilink.ViewModels
 
         private static string ConvertToReadableAscii(byte[] data)
         {
-            var sb = new StringBuilder();
+            var sb = new StringBuilder(data.Length * 2);
             foreach (var b in data)
             {
                 sb.Append(MacroDefinitions.CollapseByte(b));
