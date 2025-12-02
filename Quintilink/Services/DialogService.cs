@@ -30,25 +30,41 @@ namespace Quintilink.Services
                     dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
                     // Subscribe to RequestClose event if ViewModel has it
+                    Action<bool>? requestCloseHandler = null;
                     if (viewModel is MessageEditorViewModel messageEditor)
                     {
-                        messageEditor.RequestClose += (dialogResult) =>
+                        requestCloseHandler = (dialogResult) =>
                         {
                             dialog.DialogResult = dialogResult;
                         };
+                        messageEditor.RequestClose += requestCloseHandler;
                     }
                     else if (viewModel is ResponseEditorViewModel responseEditor)
                     {
-                        responseEditor.RequestClose += (dialogResult) =>
+                        requestCloseHandler = (dialogResult) =>
                         {
                             dialog.DialogResult = dialogResult;
                         };
+                        responseEditor.RequestClose += requestCloseHandler;
                     }
 
                     // Complete task when dialog closes
                     dialog.Closed += (s, e) =>
                     {
-                        tcs.SetResult(dialog.DialogResult);
+                        // Unsubscribe from RequestClose event to prevent memory leaks
+                        if (requestCloseHandler != null)
+                        {
+                            if (viewModel is MessageEditorViewModel me)
+                            {
+                                me.RequestClose -= requestCloseHandler;
+                            }
+                            else if (viewModel is ResponseEditorViewModel re)
+                            {
+                                re.RequestClose -= requestCloseHandler;
+                            }
+                        }
+
+                        tcs.TrySetResult(dialog.DialogResult);
                     };
 
                     // Show dialog non-blocking
@@ -56,7 +72,7 @@ namespace Quintilink.Services
                 }
                 else
                 {
-                    tcs.SetResult(null);
+                    tcs.TrySetResult(null);
                 }
             });
 
