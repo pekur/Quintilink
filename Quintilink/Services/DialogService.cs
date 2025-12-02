@@ -15,12 +15,11 @@ namespace Quintilink.Services
             _windowService = windowService;
         }
 
-        public Task<bool?> ShowDialogAsync<TViewModel>(TViewModel viewModel) where TViewModel : class
+        public async Task<bool?> ShowDialogAsync<TViewModel>(TViewModel viewModel) where TViewModel : class
         {
-            bool? result = null;
+            var tcs = new TaskCompletionSource<bool?>();
 
-            // Must run on UI thread synchronously for ShowDialog()
-            Application.Current.Dispatcher.Invoke(() =>
+            await Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 Window? dialog = CreateDialogForViewModel(viewModel);
 
@@ -46,12 +45,22 @@ namespace Quintilink.Services
                         };
                     }
 
-                    // ShowDialog() is synchronous and blocks until dialog closes
-                    result = dialog.ShowDialog();
+                    // Complete task when dialog closes
+                    dialog.Closed += (s, e) =>
+                    {
+                        tcs.TrySetResult(dialog.DialogResult);
+                    };
+
+                    // Show dialog non-blocking (but modal to owner)
+                    dialog.ShowDialog();
+                }
+                else
+                {
+                    tcs.TrySetResult(null);
                 }
             });
 
-            return Task.FromResult(result);
+            return await tcs.Task;
         }
 
         public void ShowMessage(string title, string message)

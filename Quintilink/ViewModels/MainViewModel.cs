@@ -26,6 +26,11 @@ namespace Quintilink.ViewModels
         private readonly AppSettings _settings;
         private readonly IDialogService? _dialogService;
         private readonly IDispatcherService? _dispatcherService;
+        private readonly ILogExportService _logExportService;
+
+        // Collection to store log entries for export
+        private readonly List<LogEntry> _logEntries = new();
+        private readonly object _logEntriesLock = new();
 
         [ObservableProperty]
         private string host;
@@ -167,6 +172,7 @@ namespace Quintilink.ViewModels
         {
             _dialogService = dialogService;
             _dispatcherService = dispatcherService;
+            _logExportService = new LogExportService();
 
             _client.DataReceived += OnDataReceived;
 
@@ -576,7 +582,78 @@ namespace Quintilink.ViewModels
             InvokeOnUiThread(() =>
             {
                 logDocument.Blocks.Clear();
+                
+                // Also clear stored log entries
+                lock (_logEntriesLock)
+                {
+                    _logEntries.Clear();
+                }
             });
+        }
+
+        [RelayCommand]
+        private async Task ExportLog()
+        {
+            if (_logEntries.Count == 0)
+            {
+                _dialogService?.ShowMessage("Export Log", "No log entries to export.");
+                return;
+            }
+
+            try
+            {
+                // Create SaveFileDialog
+                var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Title = "Export Log",
+                    Filter = _logExportService.GetFileFilter(),
+                    FilterIndex = 1,
+                    FileName = $"Quintilink_Log_{DateTime.Now:yyyyMMdd_HHmmss}",
+                    DefaultExt = ".csv"
+                };
+
+                bool? result = saveFileDialog.ShowDialog();
+
+                if (result == true)
+                {
+                    // Determine format based on filter index
+                    LogExportFormat format = saveFileDialog.FilterIndex switch
+                    {
+                        1 => LogExportFormat.Csv,
+                        2 => LogExportFormat.Json,
+                        3 => LogExportFormat.PlainText,
+                        _ => LogExportFormat.Csv
+                    };
+
+                    List<LogEntry> entriesToExport;
+                    lock (_logEntriesLock)
+                    {
+                        entriesToExport = new List<LogEntry>(_logEntries);
+                    }
+
+                    bool success = await _logExportService.ExportLogAsync(
+                        saveFileDialog.FileName,
+                        entriesToExport,
+                        format
+                    );
+
+                    if (success)
+                    {
+                        AppendLog($"[SYS] Log exported to {saveFileDialog.FileName} ({entriesToExport.Count} entries)");
+                        _dialogService?.ShowMessage("Export Successful", $"Log exported successfully to:\n{saveFileDialog.FileName}\n\nTotal entries: {entriesToExport.Count}");
+                    }
+                    else
+                    {
+                        AppendLog($"[ERR] Failed to export log to {saveFileDialog.FileName}");
+                        _dialogService?.ShowMessage("Export Failed", "Failed to export log. Please check file permissions and try again.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"[ERR] Export error: {ex.Message}");
+                _dialogService?.ShowMessage("Export Error", $"An error occurred during export:\n{ex.Message}");
+            }
         }
 
         [RelayCommand]
@@ -714,26 +791,92 @@ namespace Quintilink.ViewModels
         {
             string timestamp = DateTime.Now.ToString("HH:mm:ss");
             InvokeOnUiThread(() =>
-        {
-            // Determine if this is an ASCII line
-            bool isAsciiLine = entry.StartsWith("[RX] ASCII:") || entry.StartsWith("[TX] ASCII:");
-
-            // Extract prefix and content
-            string prefix = "";
-            string content = entry;
-
-            if (entry.StartsWith("["))
             {
-                int endBracket = entry.IndexOf(']');
-                if (endBracket > 0)
+                // Determine if this is an ASCII line
+                bool isAsciiLine = entry.StartsWith("[RX] ASCII:") || entry.StartsWith("[TX] ASCII:");
+
+                // Extract prefix and content
+                string prefix = "";
+                string content = entry;
+
+                if (entry.StartsWith("["))
                 {
-                    prefix = entry.Substring(0, endBracket + 1) + " ";
-                    content = entry.Substring(endBracket + 2);
+                    int endBracket = entry.IndexOf(']');
+                    if (endBracket > 0)
+                    {
+                        prefix = entry.Substring(0, endBracket + 1) + " ";
+                        content = entry.Substring(endBracket + 2);
+                    }
+                }
+
+                LogHelper.AppendLogEntry(logDocument, timestamp, prefix, content, isAsciiLine);
+
+                // Store log entry for export
+                StoreLogEntry(entry, prefix.Trim());
+            });
+        }
+
+        private void StoreLogEntry(string entry, string prefix)
+        {
+            // Parse the entry to create a LogEntry object
+            string direction = "SYS"; // Default
+            string hexData = "";
+            string asciiData = "";
+            string message = entry;
+            int byteCount = 0;
+
+            // Extract direction from prefix
+            if (prefix.Contains("[RX]")) direction = "RX";
+            else if (prefix.Contains("[TX]")) direction = "TX";
+            else if (prefix.Contains("[ERR]")) direction = "ERR";
+            else if (prefix.Contains("[SYS]")) direction = "SYS";
+
+            // Parse hex and ASCII data
+            if (entry.Contains("HEX") && entry.Contains(":"))
+            {
+                var hexStart = entry.IndexOf("HEX");
+                var colonIndex = entry.IndexOf(":", hexStart);
+                if (colonIndex > 0)
+                {
+                    var dashIndex = entry.IndexOf("–", colonIndex);
+                    if (dashIndex > 0)
+                    {
+                        hexData = entry.Substring(colonIndex + 1, dashIndex - colonIndex - 1).Trim();
+                        var bytesText = entry.Substring(dashIndex + 1).Trim();
+                        if (bytesText.Contains(" bytes"))
+                        {
+                            var parts = bytesText.Split(' ');
+                            if (parts.Length > 0 && int.TryParse(parts[0], out int count))
+                            {
+                                byteCount = count;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        hexData = entry.Substring(colonIndex + 1).Trim();
+                    }
                 }
             }
+            else if (entry.Contains("ASCII:"))
+            {
+                var asciiStart = entry.IndexOf("ASCII:");
+                asciiData = entry.Substring(asciiStart + 6).Trim();
+            }
 
-            LogHelper.AppendLogEntry(logDocument, timestamp, prefix, content, isAsciiLine);
-        });
+            var logEntry = new LogEntry(
+                DateTime.Now,
+                direction,
+                hexData,
+                asciiData,
+                message,
+                byteCount
+            );
+
+            lock (_logEntriesLock)
+            {
+                _logEntries.Add(logEntry);
+            }
         }
 
         /// <summary>
