@@ -252,6 +252,15 @@
 
                             <TextBlock VerticalAlignment="Center" FontWeight="Bold" Text="{Binding ServerStatus}" ToolTip="{Binding ServerStatusTooltip}"/>
                         </StackPanel>
+
+                        <!-- Statistics Button -->
+                        <ui:Button Command="{Binding ShowStatisticsCommand}" ToolTip="View connection statistics" 
+                                   Margin="10,0,0,0" Padding="6,4" Background="Transparent" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="DataBarVertical24" FontSize="16" Margin="0,0,4,0"/>
+                                <TextBlock Text="Stats" FontSize="11" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </ui:Button>
                     </StackPanel>
                 </Border>
 

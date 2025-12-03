@@ -32,6 +32,10 @@ namespace Quintilink.ViewModels
         private readonly List<LogEntry> _logEntries = new();
         private readonly object _logEntriesLock = new();
 
+        // Connection statistics
+        private readonly ConnectionStatistics _statistics = new();
+        private System.Threading.Timer? _statisticsUpdateTimer;
+
         [ObservableProperty]
         private string host;
 
@@ -192,15 +196,18 @@ namespace Quintilink.ViewModels
         };
 
             _server.DataReceived += async (endpoint, data) =>
-      {
-          string hex = BitConverter.ToString(data).Replace("-", " ");
-          string ascii = ConvertToReadableAscii(data);
-          InvokeOnUiThread(() =>
-      {
-          AppendLog($"[RX] {endpoint} : {hex} (ASCII: {ascii})");
-      });
-          await CheckReaction(hex);
-      };
+            {
+                // Track statistics
+                _statistics.RecordReceived(data.Length);
+
+                string hex = BitConverter.ToString(data).Replace("-", " ");
+                string ascii = ConvertToReadableAscii(data);
+                InvokeOnUiThread(() =>
+                {
+                    AppendLog($"[RX] {endpoint} : {hex} (ASCII: {ascii})");
+                });
+                await CheckReaction(hex);
+            };
 
             _server.ClientConnected += endpoint =>
                     {
@@ -389,6 +396,11 @@ namespace Quintilink.ViewModels
         {
             try
             {
+                // Start statistics tracking
+                _statistics.Reset();
+                _statistics.StartConnection();
+                StartStatisticsTimer();
+
                 if (IsSerialMode)
                 {
                     await _serialPort.ConnectAsync(
@@ -429,6 +441,8 @@ namespace Quintilink.ViewModels
             {
                 AppendLog($"[ERR] Failed to connect: {ex.Message}");
                 IsConnected = false;
+                _statistics.EndConnection();
+                StopStatisticsTimer();
             }
 
             ConnectCommand.NotifyCanExecuteChanged();
@@ -460,6 +474,11 @@ namespace Quintilink.ViewModels
             }
 
             IsConnected = false;
+            
+            // End statistics tracking
+            _statistics.EndConnection();
+            StopStatisticsTimer();
+            
             ConnectCommand.NotifyCanExecuteChanged();
             DisconnectCommand.NotifyCanExecuteChanged();
             UpdateServerStatus();
@@ -485,6 +504,9 @@ namespace Quintilink.ViewModels
 
             if (success)
             {
+                // Track statistics
+                _statistics.RecordSent(bytes.Length);
+
                 string ascii = ConvertToReadableAscii(bytes);
                 string hex = MessageDefinition.ToSpacedHex(bytes);
                 AppendLog($"[TX] ASCII: {ascii}");
@@ -739,6 +761,9 @@ namespace Quintilink.ViewModels
 
         private async void OnDataReceived(byte[] data)
         {
+            // Track statistics
+            _statistics.RecordReceived(data.Length);
+
             string ascii = ConvertToReadableAscii(data);
             string hex = BitConverter.ToString(data).Replace("-", " ");
 
@@ -892,6 +917,45 @@ namespace Quintilink.ViewModels
             {
                 Application.Current?.Dispatcher?.Invoke(action);
             }
+        }
+
+        private void StartStatisticsTimer()
+        {
+            // Update statistics every second
+            _statisticsUpdateTimer = new System.Threading.Timer(_ =>
+            {
+                // Timer callback runs on thread pool, no UI updates needed here
+            }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        }
+
+        private void StopStatisticsTimer()
+        {
+            _statisticsUpdateTimer?.Dispose();
+            _statisticsUpdateTimer = null;
+        }
+
+        [RelayCommand]
+        private void ShowStatistics()
+        {
+            var statisticsViewModel = new StatisticsViewModel(_statistics);
+            statisticsViewModel.UpdateStatistics();
+
+            var statisticsWindow = new Views.StatisticsWindow
+            {
+                DataContext = statisticsViewModel,
+                Owner = Application.Current?.MainWindow
+            };
+
+            // Update statistics every second while window is open
+            var updateTimer = new System.Threading.Timer(_ =>
+            {
+                InvokeOnUiThread(() => statisticsViewModel.UpdateStatistics());
+            }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+
+            statisticsWindow.Closed += (s, e) => updateTimer?.Dispose();
+            
+            // Show non-modal window
+            statisticsWindow.Show();
         }
     }
 }
