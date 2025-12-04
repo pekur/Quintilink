@@ -41,6 +41,10 @@ namespace Quintilink.ViewModels
         private readonly List<ByteHighlightRange> _highlightRanges = new();
         private HexSearchFilter _currentSearchFilter = new();
 
+        // Statistics window tracking
+        private Views.StatisticsWindow? _statisticsWindow;
+        private System.Threading.Timer? _statisticsWindowUpdateTimer;
+
         [ObservableProperty]
         private string host;
 
@@ -942,25 +946,42 @@ namespace Quintilink.ViewModels
         [RelayCommand]
         private void ShowStatistics()
         {
+            // Toggle: if window is already open, close it
+            if (_statisticsWindow != null)
+            {
+                _statisticsWindow.Close();
+                _statisticsWindow = null;
+                _statisticsWindowUpdateTimer?.Dispose();
+                _statisticsWindowUpdateTimer = null;
+                return;
+            }
+
+            // Create and show new window
             var statisticsViewModel = new StatisticsViewModel(_statistics);
             statisticsViewModel.UpdateStatistics();
 
-            var statisticsWindow = new Views.StatisticsWindow
+            _statisticsWindow = new Views.StatisticsWindow
             {
                 DataContext = statisticsViewModel,
                 Owner = Application.Current?.MainWindow
             };
 
             // Update statistics every second while window is open
-            var updateTimer = new System.Threading.Timer(_ =>
+            _statisticsWindowUpdateTimer = new System.Threading.Timer(_ =>
             {
                 InvokeOnUiThread(() => statisticsViewModel.UpdateStatistics());
             }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
 
-            statisticsWindow.Closed += (s, e) => updateTimer?.Dispose();
-            
+            // Clean up when window is closed
+            _statisticsWindow.Closed += (s, e) =>
+            {
+                _statisticsWindowUpdateTimer?.Dispose();
+                _statisticsWindowUpdateTimer = null;
+                _statisticsWindow = null;
+            };
+
             // Show non-modal window
-            statisticsWindow.Show();
+            _statisticsWindow.Show();
         }
 
         [RelayCommand]
