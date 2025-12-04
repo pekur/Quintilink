@@ -23,7 +23,28 @@ public class MessageDefinition
 
     public byte[] GetBytes()
     {
-        return ParseHex(Content);
+        try
+        {
+            // Try parsing as hex first
+            return ParseHex(Content);
+        }
+        catch (FormatException)
+        {
+            // If hex parsing fails, treat as ASCII text and convert macros
+            return ConvertAsciiWithMacros(Content);
+        }
+    }
+
+    private static byte[] ConvertAsciiWithMacros(string input)
+    {
+        // Simple macro expansion for common cases
+        string processed = input;
+        processed = processed.Replace("<CR>", "\r");
+        processed = processed.Replace("<LF>", "\n");
+        processed = processed.Replace("<TAB>", "\t");
+        processed = processed.Replace("<NULL>", "\0");
+        
+        return Encoding.ASCII.GetBytes(processed);
     }
 
     public string GetAscii()

@@ -46,6 +46,14 @@ namespace Quintilink.ViewModels
         private System.Threading.Timer? _statisticsWindowUpdateTimer;
 
         [ObservableProperty]
+        private string quickSendText = string.Empty;
+
+        partial void OnQuickSendTextChanged(string value)
+        {
+            SendQuickMessageCommand.NotifyCanExecuteChanged();
+        }
+
+        [ObservableProperty]
         private string host;
 
         [ObservableProperty]
@@ -81,6 +89,11 @@ namespace Quintilink.ViewModels
 
         [ObservableProperty]
         private bool isConnected;
+
+        partial void OnIsConnectedChanged(bool value)
+        {
+            SendQuickMessageCommand.NotifyCanExecuteChanged();
+        }
 
         // Serial Port Properties
         [ObservableProperty]
@@ -1119,5 +1132,40 @@ namespace Quintilink.ViewModels
                 $"Configured {_highlightRanges.Count} highlight ranges:\n\n" +
                 string.Join("\n", _highlightRanges.Select(r => $"• {r.Name}: 0x{r.RangeStart:X2}-0x{r.RangeEnd:X2}")));
         }
+
+        [RelayCommand(CanExecute = nameof(CanSendQuickMessage))]
+        private async Task SendQuickMessage()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(QuickSendText))
+                {
+                    AppendLog("[ERR] Quick Send: Text is empty");
+                    return;
+                }
+
+                AppendLog($"[SYS] Quick Send: Preparing to send '{QuickSendText}'");
+
+                // Create a temporary message definition from the quick send text
+                var tempMessage = new MessageDefinition
+                {
+                    Name = "Quick Send",
+                    Content = QuickSendText
+                };
+
+                // Send the message
+                await SendMessageAsync(tempMessage);
+
+                // Clear the quick send text after sending
+                QuickSendText = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"[ERR] Quick Send failed: {ex.Message}");
+                AppendLog($"[ERR] Stack trace: {ex.StackTrace}");
+            }
+        }
+
+        private bool CanSendQuickMessage() => IsConnected && !string.IsNullOrWhiteSpace(QuickSendText);
     }
 }

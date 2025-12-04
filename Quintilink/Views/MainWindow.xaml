@@ -24,6 +24,7 @@
             <RowDefinition Height="32"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Custom Fluent title bar -->
@@ -627,6 +628,51 @@
             </ui:Card>
 
         </Grid>
+
+        <!-- Quick Send Field -->
+        <ui:Card Grid.Row="3" Margin="10,2,10,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox Grid.Column="0" 
+                         Text="{Binding QuickSendText, UpdateSourceTrigger=PropertyChanged}"
+                         VerticalAlignment="Center"
+                         Height="35"
+                         FontSize="13"
+                         FontFamily="Consolas"
+                         Padding="10,8"
+                         Margin="0,0,10,0"
+                         x:Name="QuickSendTextBox">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Return" Command="{Binding SendQuickMessageCommand}"/>
+                    </TextBox.InputBindings>
+                    <TextBox.Style>
+                        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsConnected}" Value="False">
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+
+                <ui:Button Grid.Column="1" 
+                           Command="{Binding SendQuickMessageCommand}"
+                           ToolTip="Send message (Enter)"
+                           Height="35"
+                           MinWidth="100"
+                           Padding="15,8">
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon Symbol="Send24" FontSize="16" Margin="0,0,8,0"/>
+                        <TextBlock Text="Send" FontSize="13" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </ui:Button>
+            </Grid>
+        </ui:Card>
     </Grid>
 
 </ui:FluentWindow>
