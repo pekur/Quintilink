@@ -36,6 +36,11 @@ namespace Quintilink.ViewModels
         private readonly ConnectionStatistics _statistics = new();
         private System.Threading.Timer? _statisticsUpdateTimer;
 
+        // Hex viewer features
+        private readonly List<LogBookmark> _bookmarks = new();
+        private readonly List<ByteHighlightRange> _highlightRanges = new();
+        private HexSearchFilter _currentSearchFilter = new();
+
         [ObservableProperty]
         private string host;
 
@@ -956,6 +961,142 @@ namespace Quintilink.ViewModels
             
             // Show non-modal window
             statisticsWindow.Show();
+        }
+
+        [RelayCommand]
+        private void CompareMessages()
+        {
+            var comparisonViewModel = new HexComparisonViewModel();
+            comparisonViewModel.LoadMessages(PredefinedMessages);
+
+            var comparisonWindow = new Views.HexComparisonWindow
+            {
+                DataContext = comparisonViewModel,
+                Owner = Application.Current?.MainWindow
+            };
+
+            comparisonWindow.ShowDialog();
+        }
+
+        [RelayCommand]
+        private void AddBookmark()
+        {
+            int currentIndex;
+            lock (_logEntriesLock)
+            {
+                currentIndex = _logEntries.Count - 1;
+            }
+
+            if (currentIndex < 0)
+            {
+                _dialogService?.ShowMessage("Add Bookmark", "No log entries to bookmark.");
+                return;
+            }
+
+            var bookmark = new LogBookmark
+            {
+                LogEntryIndex = currentIndex,
+                Description = $"Bookmark at {DateTime.Now:HH:mm:ss}",
+                LogEntryPreview = _logEntries[currentIndex].Message
+            };
+
+            _bookmarks.Add(bookmark);
+            AppendLog($"[SYS] Bookmark added: {bookmark.Description}");
+        }
+
+        [RelayCommand]
+        private void SearchHexPattern(string? pattern)
+        {
+            // Show search dialog
+            var searchViewModel = new SearchDialogViewModel();
+            var searchDialog = new Views.SearchDialog
+            {
+                DataContext = searchViewModel,
+                Owner = Application.Current?.MainWindow
+            };
+
+            searchViewModel.RequestClose += result => searchDialog.DialogResult = result;
+
+            if (searchDialog.ShowDialog() == true)
+            {
+                PerformSearch(searchViewModel.SearchPattern, 
+                             searchViewModel.SelectedDirection, 
+                             searchViewModel.CaseSensitive);
+            }
+        }
+
+        private void PerformSearch(string pattern, SearchDirection direction, bool caseSensitive)
+        {
+            List<LogEntry> results;
+            lock (_logEntriesLock)
+            {
+                var comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+                
+                results = _logEntries
+                    .Where(entry =>
+                    {
+                        // Filter by direction
+                        if (direction != SearchDirection.All && entry.Direction != direction.ToString())
+                            return false;
+
+                        // Search in hex data, ASCII data, and message
+                        return entry.HexData.Contains(pattern, comparison) ||
+                               entry.AsciiData.Contains(pattern, comparison) ||
+                               entry.Message.Contains(pattern, comparison);
+                    })
+                    .ToList();
+            }
+
+            // Show results window
+            var resultsViewModel = new SearchResultsViewModel();
+            resultsViewModel.LoadResults(pattern, results);
+
+            var resultsWindow = new Views.SearchResultsWindow
+            {
+                DataContext = resultsViewModel,
+                Owner = Application.Current?.MainWindow
+            };
+
+            resultsWindow.Show();
+        }
+
+        [RelayCommand]
+        private void ConfigureByteHighlighting()
+        {
+            // Initialize default ranges if empty
+            if (_highlightRanges.Count == 0)
+            {
+                _highlightRanges.Add(new ByteHighlightRange
+                {
+                    Name = "Control Characters",
+                    RangeStart = 0x00,
+                    RangeEnd = 0x1F,
+                    Color = "#FFE6E6",
+                    IsEnabled = true
+                });
+
+                _highlightRanges.Add(new ByteHighlightRange
+                {
+                    Name = "Printable ASCII",
+                    RangeStart = 0x20,
+                    RangeEnd = 0x7E,
+                    Color = "#E6FFE6",
+                    IsEnabled = true
+                });
+
+                _highlightRanges.Add(new ByteHighlightRange
+                {
+                    Name = "Extended ASCII",
+                    RangeStart = 0x7F,
+                    RangeEnd = 0xFF,
+                    Color = "#E6E6FF",
+                    IsEnabled = true
+                });
+            }
+
+            _dialogService?.ShowMessage("Byte Highlighting", 
+                $"Configured {_highlightRanges.Count} highlight ranges:\n\n" +
+                string.Join("\n", _highlightRanges.Select(r => $"• {r.Name}: 0x{r.RangeStart:X2}-0x{r.RangeEnd:X2}")));
         }
     }
 }
