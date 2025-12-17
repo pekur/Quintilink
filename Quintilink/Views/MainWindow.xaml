@@ -411,14 +411,19 @@
             </Grid.ColumnDefinitions>
 
             <!-- Left panel: Log -->
-            <ui:Card  Grid.Column="0" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" Margin="0,0,2,0">
-                <Grid>
-                    <RichTextBox Grid.Row="0" local:RichTextBoxHelper.Document="{Binding LogDocument}" IsReadOnly="True" VerticalScrollBarVisibility="Auto"
-                        Background="#FFFFFF" BorderBrush="#DDD" BorderThickness="1" Margin="-5" 
+            <ui:Card  Grid.Column="0" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" Margin="0,-5,0,0">
+                <Grid Margin="-5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <RichTextBox Grid.Row="1" local:RichTextBoxHelper.Document="{Binding LogDocument}" IsReadOnly="True" VerticalScrollBarVisibility="Auto"
+                        Background="#FFFFFF" BorderBrush="#DDD" BorderThickness="1" Margin="-5, 5, -5, -5" 
                           local:AutoScrollBehavior.AutoScroll="True"/>
 
                     <!-- Log Action Buttons -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,5,12,0">
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,0,0">
                         <!-- Search Button -->
                         <ui:Button Command="{Binding SearchHexPatternCommand}" 
                                    ToolTip="Search hex pattern in log" 
