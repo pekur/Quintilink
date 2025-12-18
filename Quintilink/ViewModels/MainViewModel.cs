@@ -84,6 +84,44 @@ namespace Quintilink.ViewModels
         [ObservableProperty]
         private bool isSerialMode = false;
 
+        public bool IsClientMode
+        {
+            get => !IsServerMode && !IsSerialMode;
+            set
+            {
+                if (!value)
+                    return;
+
+                if (IsServerMode)
+                    IsServerMode = false;
+
+                if (IsSerialMode)
+                    IsSerialMode = false;
+
+                OnPropertyChanged(nameof(IsClientMode));
+            }
+        }
+
+        partial void OnIsServerModeChanged(bool value)
+        {
+            if (value && IsSerialMode)
+            {
+                IsSerialMode = false;
+            }
+
+            OnPropertyChanged(nameof(IsClientMode));
+        }
+
+        partial void OnIsSerialModeChanged(bool value)
+        {
+            if (value && IsServerMode)
+            {
+                IsServerMode = false;
+            }
+
+            OnPropertyChanged(nameof(IsClientMode));
+        }
+
         [ObservableProperty]
         private FlowDocument logDocument = LogHelper.CreateLogDocument();
 

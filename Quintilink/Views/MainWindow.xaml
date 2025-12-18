@@ -17,6 +17,7 @@
 
     <ui:FluentWindow.Resources>
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+        <converters:BooleanToStateTextConverter x:Key="StateTextConverter"/>
     </ui:FluentWindow.Resources>
 
     <Grid>
@@ -36,20 +37,14 @@
                 <!-- Section 1: Connection Mode Selection -->
                 <Border BorderThickness="0" Padding="5" Margin="0,0,10,5">
                     <StackPanel Orientation="Horizontal">
-                        <RadioButton Content="TCP Client" GroupName="ConnectionMode" Margin="0,0,0,0" VerticalAlignment="Center">
+                        <RadioButton Content="TCP Client" GroupName="ConnectionMode" Margin="0,0,0,0" VerticalAlignment="Center"
+                                     IsChecked="{Binding IsClientMode, Mode=TwoWay}">
                             <RadioButton.Style>
                                 <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
-                                    <Setter Property="IsChecked" Value="True"/>
                                     <Setter Property="IsEnabled" Value="True"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsConnected}" Value="True">
                                             <Setter Property="IsEnabled" Value="False"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsServerMode}" Value="True">
-                                            <Setter Property="IsChecked" Value="False"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsSerialMode}" Value="True">
-                                            <Setter Property="IsChecked" Value="False"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -238,18 +233,22 @@
 
                         <!-- Status indicator -->
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Ellipse Width="12" Height="12" Margin="0,0,5,0">
-                                <Ellipse.Style>
-                                    <Style TargetType="Ellipse">
-                                        <Setter Property="Fill" Value="Red"/>
+                            <ui:SymbolIcon Width="14" Height="14" Margin="0,0,5,0">
+                                <ui:SymbolIcon.Style>
+                                    <Style TargetType="ui:SymbolIcon">
+                                        <Setter Property="Symbol" Value="Dismiss12"/>
+                                        <Setter Property="Foreground" Value="Red"/>
+                                        <Setter Property="AutomationProperties.Name" Value="Disconnected"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                                <Setter Property="Fill" Value="LimeGreen"/>
+                                                <Setter Property="Symbol" Value="Checkmark12"/>
+                                                <Setter Property="Foreground" Value="LimeGreen"/>
+                                                <Setter Property="AutomationProperties.Name" Value="Connected"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
-                                </Ellipse.Style>
-                            </Ellipse>
+                                </ui:SymbolIcon.Style>
+                            </ui:SymbolIcon>
 
                             <TextBlock VerticalAlignment="Center" FontWeight="Bold" Text="{Binding ServerStatus}" ToolTip="{Binding ServerStatusTooltip}"/>
                         </StackPanel>
@@ -286,7 +285,7 @@
                             <!-- Input Lines (Read-only indicators) -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,5,0">
                                 <TextBlock Text="CTS" FontSize="10" Margin="0,0,2,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                                <Ellipse Width="10" Height="10" Margin="0,0,6,0" VerticalAlignment="Center">
+                                <Ellipse Width="10" Height="10" Margin="0,0,2,0" VerticalAlignment="Center">
                                     <Ellipse.Style>
                                         <Style TargetType="Ellipse">
                                             <Setter Property="Fill" Value="Gray"/>
@@ -298,9 +297,10 @@
                                         </Style>
                                     </Ellipse.Style>
                                 </Ellipse>
+                                <TextBlock Text="{Binding CtsStatus, Converter={StaticResource StateTextConverter}}" FontSize="10" Margin="0,0,6,0" VerticalAlignment="Center" Foreground="Gray"/>
 
                                 <TextBlock Text="DSR" FontSize="10" Margin="0,0,2,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                                <Ellipse Width="10" Height="10" Margin="0,0,6,0" VerticalAlignment="Center">
+                                <Ellipse Width="10" Height="10" Margin="0,0,2,0" VerticalAlignment="Center">
                                     <Ellipse.Style>
                                         <Style TargetType="Ellipse">
                                             <Setter Property="Fill" Value="Gray"/>
@@ -312,9 +312,10 @@
                                         </Style>
                                     </Ellipse.Style>
                                 </Ellipse>
+                                <TextBlock Text="{Binding DsrStatus, Converter={StaticResource StateTextConverter}}" FontSize="10" Margin="0,0,6,0" VerticalAlignment="Center" Foreground="Gray"/>
 
                                 <TextBlock Text="CD" FontSize="10" Margin="0,0,2,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                                <Ellipse Width="10" Height="10" Margin="0,0,6,0" VerticalAlignment="Center">
+                                <Ellipse Width="10" Height="10" Margin="0,0,2,0" VerticalAlignment="Center">
                                     <Ellipse.Style>
                                         <Style TargetType="Ellipse">
                                             <Setter Property="Fill" Value="Gray"/>
@@ -326,9 +327,10 @@
                                         </Style>
                                     </Ellipse.Style>
                                 </Ellipse>
+                                <TextBlock Text="{Binding CdStatus, Converter={StaticResource StateTextConverter}}" FontSize="10" Margin="0,0,6,0" VerticalAlignment="Center" Foreground="Gray"/>
 
                                 <TextBlock Text="RI" FontSize="10" Margin="0,0,2,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                                <Ellipse Width="10" Height="10" Margin="0,0,0,0" VerticalAlignment="Center">
+                                <Ellipse Width="10" Height="10" Margin="0,0,2,0" VerticalAlignment="Center">
                                     <Ellipse.Style>
                                         <Style TargetType="Ellipse">
                                             <Setter Property="Fill" Value="Gray"/>
@@ -340,6 +342,7 @@
                                         </Style>
                                     </Ellipse.Style>
                                 </Ellipse>
+                                <TextBlock Text="{Binding RiStatus, Converter={StaticResource StateTextConverter}}" FontSize="10" Margin="0,0,0,0" VerticalAlignment="Center" Foreground="Gray"/>
                             </StackPanel>
 
                             <!-- Separator -->
@@ -347,13 +350,20 @@
 
                             <!-- Output Lines (Toggle buttons) -->
                             <StackPanel Orientation="Horizontal" Margin="8,0,0,0">
-                                <Button Command="{Binding ToggleDtrCommand}" ToolTip="Toggle DTR (Data Terminal Ready)" Padding="5,2" Margin="0,0,4,0" FontSize="10" Height="24" MinWidth="38">
+                                <Button Command="{Binding ToggleDtrCommand}" ToolTip="Toggle DTR (Data Terminal Ready)" Padding="5,2" Margin="0,0,4,0" FontSize="10" Height="24" MinWidth="60">
                                     <Button.Style>
                                         <Style TargetType="Button">
-                                            <Setter Property="Content" Value="DTR"/>
                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                             <Setter Property="Background" Value="{DynamicResource ButtonBackground}"/>
                                             <Setter Property="Foreground" Value="{DynamicResource ButtonForeground}"/>
+                                            <Setter Property="Content">
+                                                <Setter.Value>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <TextBlock Text="DTR"/>
+                                                        <TextBlock Text="{Binding DtrEnabled, Converter={StaticResource StateTextConverter}}" Margin="4,0,0,0" Foreground="Gray"/>
+                                                    </StackPanel>
+                                                </Setter.Value>
+                                            </Setter>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding DtrEnabled}" Value="True">
                                                     <Setter Property="Background" Value="LimeGreen"/>
@@ -372,13 +382,20 @@
                                     </Button.Style>
                                 </Button>
 
-                                <Button Command="{Binding ToggleRtsCommand}" ToolTip="Toggle RTS (Request To Send)" Padding="5,2" FontSize="10" Height="24" MinWidth="38">
+                                <Button Command="{Binding ToggleRtsCommand}" ToolTip="Toggle RTS (Request To Send)" Padding="5,2" FontSize="10" Height="24" MinWidth="60">
                                     <Button.Style>
                                         <Style TargetType="Button">
-                                            <Setter Property="Content" Value="RTS"/>
                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                             <Setter Property="Background" Value="{DynamicResource ButtonBackground}"/>
                                             <Setter Property="Foreground" Value="{DynamicResource ButtonForeground}"/>
+                                            <Setter Property="Content">
+                                                <Setter.Value>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <TextBlock Text="RTS"/>
+                                                        <TextBlock Text="{Binding RtsEnabled, Converter={StaticResource StateTextConverter}}" Margin="4,0,0,0" Foreground="Gray"/>
+                                                    </StackPanel>
+                                                </Setter.Value>
+                                            </Setter>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding RtsEnabled}" Value="True">
                                                     <Setter Property="Background" Value="LimeGreen"/>
