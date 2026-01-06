@@ -1184,18 +1184,35 @@ namespace Quintilink.ViewModels
 
                 AppendLog($"[SYS] Quick Send: Preparing to send '{QuickSendText}'");
 
-                // Create a temporary message definition from the quick send text
-                var tempMessage = new MessageDefinition
+                var bytes = MixedInputParser.Parse(QuickSendText, out int invalidHexSegmentCount);
+                if (invalidHexSegmentCount > 0)
                 {
-                    Name = "Quick Send",
-                    Content = QuickSendText
-                };
+                    AppendLog($"[SYS] Quick Send: {invalidHexSegmentCount} invalid <...> segment(s) treated as ASCII");
+                }
 
-                // Send the message
-                await SendMessageAsync(tempMessage);
+                bool success;
+                if (IsSerialMode)
+                    success = await _serialPort.SendAsync(bytes);
+                else if (IsServerMode)
+                    success = await _server.SendAsync(bytes);
+                else
+                    success = await _client.SendAsync(bytes);
 
-                // Clear the quick send text after sending
-                QuickSendText = string.Empty;
+                if (success)
+                {
+                    _statistics.RecordSent(bytes.Length);
+
+                    string ascii = ConvertToReadableAscii(bytes);
+                    string hex = MessageDefinition.ToSpacedHex(bytes);
+                    AppendLog($"[TX] ASCII: {ascii}");
+                    AppendLog($"[TX] HEX  : {hex} – {bytes.Length} bytes");
+
+                    QuickSendText = string.Empty;
+                }
+                else
+                {
+                    AppendLog("[ERR] Quick Send failed: not connected");
+                }
             }
             catch (Exception ex)
             {

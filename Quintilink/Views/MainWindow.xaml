@@ -684,7 +684,7 @@
 
                 <ui:Button Grid.Column="1" 
                            Command="{Binding SendQuickMessageCommand}"
-                           ToolTip="Send message (Enter)"
+                           ToolTip="Send message (Enter). Plain text sends as ASCII; embed hex bytes as &lt;0D 0A&gt;"
                            Height="35"
                            MinWidth="100"
                            Padding="15,8">
