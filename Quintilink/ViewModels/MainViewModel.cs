@@ -1187,5 +1187,90 @@ namespace Quintilink.ViewModels
                 }
             });
         }
+
+        [RelayCommand]
+        private async Task SearchHexPattern()
+        {
+            var vm = new SearchDialogViewModel();
+
+            bool? result;
+            if (_dialogService != null)
+            {
+                result = await _dialogService.ShowDialogAsync(vm);
+            }
+            else
+            {
+                var dlg = new SearchDialog
+                {
+                    DataContext = vm,
+                    Owner = Application.Current?.MainWindow,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+
+                vm.RequestClose += r => dlg.DialogResult = r;
+                result = dlg.ShowDialog();
+            }
+
+            if (result != true)
+                return;
+
+            // Store last filter
+            _currentSearchFilter = new HexSearchFilter
+            {
+                Pattern = vm.SearchPattern,
+                UseRegex = vm.UseRegex,
+                CaseSensitive = vm.CaseSensitive,
+                Direction = vm.SelectedDirection
+            };
+
+            List<LogEntry> snapshot;
+            lock (_logEntriesLock)
+            {
+                snapshot = new List<LogEntry>(_logEntries);
+            }
+
+            var matches = SearchInLogEntries(snapshot, _currentSearchFilter);
+
+            InvokeOnUiThread(() =>
+            {
+                var resultsVm = new SearchResultsViewModel();
+                resultsVm.LoadResults(vm.SearchPattern, matches);
+
+                var wnd = new SearchResultsWindow
+                {
+                    DataContext = resultsVm,
+                    Owner = Application.Current?.MainWindow,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+
+                wnd.Show();
+                wnd.Activate();
+            });
+        }
+
+        private static List<LogEntry> SearchInLogEntries(List<LogEntry> entries, HexSearchFilter filter)
+        {
+            if (string.IsNullOrWhiteSpace(filter.Pattern))
+                return new List<LogEntry>();
+
+            var comparison = filter.CaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+
+            bool DirectionMatch(LogEntry e)
+            {
+                if (filter.Direction == SearchDirection.All) return true;
+                return e.Direction.Equals(filter.Direction.ToString(), comparison);
+            }
+
+            if (filter.UseRegex)
+            {
+                var options = filter.CaseSensitive ? System.Text.RegularExpressions.RegexOptions.None : System.Text.RegularExpressions.RegexOptions.IgnoreCase;
+                var rx = new System.Text.RegularExpressions.Regex(filter.Pattern, options);
+                return entries.Where(e => DirectionMatch(e) && rx.IsMatch(e.Message ?? string.Empty)).ToList();
+            }
+
+            return entries
+                .Where(e => DirectionMatch(e) && (e.Message ?? string.Empty).Contains(filter.Pattern, comparison))
+                .ToList();
+        }
     }
 }

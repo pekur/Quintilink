@@ -44,6 +44,13 @@ namespace Quintilink.Services
                             dialog.DialogResult = dialogResult;
                         };
                     }
+                    else if (viewModel is SearchDialogViewModel searchDialog)
+                    {
+                        searchDialog.RequestClose += (dialogResult) =>
+                        {
+                            dialog.DialogResult = dialogResult;
+                        };
+                    }
 
                     // Complete task when dialog closes
                     dialog.Closed += (s, e) =>
@@ -77,6 +84,7 @@ namespace Quintilink.Services
             {
                 MessageEditorViewModel => new MessageEditorWindow(),
                 ResponseEditorViewModel => new ResponseEditorWindow(),
+                SearchDialogViewModel => new SearchDialog(),
                 _ => null
             };
         }
