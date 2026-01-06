@@ -663,7 +663,7 @@ namespace Quintilink.ViewModels
         {
             InvokeOnUiThread(() =>
             {
-                logDocument.Blocks.Clear();
+                LogDocument.Blocks.Clear();
                 
                 // Also clear stored log entries
                 lock (_logEntriesLock)
@@ -894,7 +894,7 @@ namespace Quintilink.ViewModels
                     }
                 }
 
-                LogHelper.AppendLogEntry(logDocument, timestamp, prefix, content, isAsciiLine);
+                LogHelper.AppendLogEntry(LogDocument, timestamp, prefix, content, isAsciiLine);
 
                 // Store log entry for export
                 StoreLogEntry(entry, prefix.Trim());
