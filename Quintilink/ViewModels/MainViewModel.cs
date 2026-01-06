@@ -8,6 +8,7 @@ using System.Windows.Documents;
 using Quintilink.Models;
 using Quintilink.Helpers;
 using Quintilink.Services;
+using Quintilink.Views;
 
 namespace Quintilink.ViewModels
 {
@@ -1140,5 +1141,51 @@ namespace Quintilink.ViewModels
         }
 
         private bool CanSendQuickMessage() => IsConnected && !string.IsNullOrWhiteSpace(QuickSendText);
+
+        [RelayCommand]
+        private void ShowStatistics()
+        {
+            InvokeOnUiThread(() =>
+            {
+                if (_statisticsWindow == null)
+                {
+                    var vm = new StatisticsViewModel(_statistics);
+
+                    _statisticsWindow = new StatisticsWindow
+                    {
+                        DataContext = vm,
+                        Owner = Application.Current?.MainWindow,
+                        WindowStartupLocation = WindowStartupLocation.CenterOwner
+                    };
+
+                    _statisticsWindow.Closed += (_, __) =>
+                    {
+                        _statisticsWindowUpdateTimer?.Dispose();
+                        _statisticsWindowUpdateTimer = null;
+                        _statisticsWindow = null;
+                    };
+
+                    _statisticsWindow.Show();
+
+                    // update stats ~4x/sec while window is open
+                    _statisticsWindowUpdateTimer?.Dispose();
+                    _statisticsWindowUpdateTimer = new System.Threading.Timer(_ =>
+                    {
+                        InvokeOnUiThread(() =>
+                        {
+                            if (_statisticsWindow?.DataContext is StatisticsViewModel svm)
+                                svm.UpdateStatistics();
+                        });
+                    }, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(250));
+                }
+                else
+                {
+                    if (!_statisticsWindow.IsVisible)
+                        _statisticsWindow.Show();
+
+                    _statisticsWindow.Activate();
+                }
+            });
+        }
     }
 }
