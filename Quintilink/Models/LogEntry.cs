@@ -11,9 +11,11 @@ namespace Quintilink.Models
         public string Message { get; set; } = string.Empty;
         public int ByteCount { get; set; }
 
+        public bool IsBookmarked { get; set; }
+
         public LogEntry() { }
 
-        public LogEntry(DateTime timestamp, string direction, string hexData, string asciiData, string message, int byteCount = 0)
+        public LogEntry(DateTime timestamp, string direction, string hexData, string asciiData, string message, int byteCount = 0, bool isBookmarked = false)
         {
             Timestamp = timestamp;
             Direction = direction;
@@ -21,6 +23,7 @@ namespace Quintilink.Models
             AsciiData = asciiData;
             Message = message;
             ByteCount = byteCount;
+            IsBookmarked = isBookmarked;
         }
 
         public string ToCsvLine()
@@ -30,12 +33,12 @@ namespace Quintilink.Models
             string escapedHex = HexData.Replace("\"", "\"\"");
             string escapedAscii = AsciiData.Replace("\"", "\"\"");
 
-            return $"\"{Timestamp:yyyy-MM-dd HH:mm:ss.fff}\",\"{Direction}\",\"{escapedHex}\",\"{escapedAscii}\",\"{escapedMessage}\",{ByteCount}";
+            return $"\"{Timestamp:yyyy-MM-dd HH:mm:ss.fff}\",\"{Direction}\",\"{escapedHex}\",\"{escapedAscii}\",\"{escapedMessage}\",{ByteCount},{(IsBookmarked ? 1 : 0)}";
         }
 
         public static string GetCsvHeader()
         {
-            return "Timestamp,Direction,Hex,ASCII,Message,ByteCount";
+            return "Timestamp,Direction,Hex,ASCII,Message,ByteCount,Bookmarked";
         }
     }
 }

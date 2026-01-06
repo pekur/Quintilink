@@ -1,7 +1,9 @@
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using Quintilink.Models;
 
 namespace Quintilink.Helpers
@@ -13,6 +15,7 @@ namespace Quintilink.Helpers
         private static readonly Brush DimGreenBrush = new SolidColorBrush(Color.FromRgb(0x87, 0xdb, 0x9c));
         private static readonly Brush BlueBrush = new SolidColorBrush(Color.FromRgb(0x04, 0x51, 0xb5));
         private static readonly Brush DimBlueBrush = new SolidColorBrush(Color.FromRgb(0x87, 0xbf, 0xde));
+        private static readonly Brush BookmarkBrush = new SolidColorBrush(Color.FromRgb(0xE5, 0x14, 0x00));
 
         public static FlowDocument CreateLogDocument()
         {
@@ -26,7 +29,41 @@ namespace Quintilink.Helpers
 
         public static void AppendLogEntry(FlowDocument document, string timestamp, string prefix, string content, bool isAsciiLine = false)
         {
+            AppendLogEntry(document, timestamp, prefix, content, isAsciiLine, isBookmarked: false);
+        }
+
+        public static void AppendLogEntry(FlowDocument document, string timestamp, string prefix, string content, bool isAsciiLine, bool isBookmarked)
+        {
             var paragraph = new Paragraph { Margin = new Thickness(0) };
+
+            const double gutterWidth = 18;
+            const double dotSize = 12;
+
+            // Fixed-width gutter so the rest of the text never shifts.
+            var gutter = new Grid
+            {
+                Width = gutterWidth,
+                Height = dotSize,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            if (isBookmarked)
+            {
+                gutter.Children.Add(new Ellipse
+                {
+                    Width = dotSize,
+                    Height = dotSize,
+                    Fill = BookmarkBrush,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                });
+            }
+
+            var gutterInline = new InlineUIContainer(gutter)
+            {
+                BaselineAlignment = BaselineAlignment.Center
+            };
+            paragraph.Inlines.Add(gutterInline);
 
             // Add timestamp in gray
             paragraph.Inlines.Add(new Run($"[{timestamp}] ") { Foreground = Brushes.Gray });

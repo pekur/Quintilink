@@ -345,7 +345,7 @@
                                  Margin="0,0,0,0"
                                  local:AutoScrollBehavior.AutoScroll="True"/>
                 </Grid>
-            </ui:Card>
+            </ui:Card> 
 
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="Transparent" ShowsPreview="False"/>
 

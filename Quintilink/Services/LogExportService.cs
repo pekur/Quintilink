@@ -84,28 +84,29 @@ namespace Quintilink.Services
 
             foreach (var entry in entries)
             {
-                sb.AppendLine($"[{entry.Timestamp:HH:mm:ss.fff}] [{entry.Direction}]");
-                
+                var bookmarkTag = entry.IsBookmarked ? " [BOOKMARK]" : string.Empty;
+                sb.AppendLine($"[{entry.Timestamp:HH:mm:ss.fff}] [{entry.Direction}]{bookmarkTag}");
+
                 if (!string.IsNullOrEmpty(entry.HexData))
                 {
                     sb.AppendLine($"  HEX  : {entry.HexData}");
                 }
-                
+
                 if (!string.IsNullOrEmpty(entry.AsciiData))
                 {
                     sb.AppendLine($"  ASCII: {entry.AsciiData}");
                 }
-                
+
                 if (!string.IsNullOrEmpty(entry.Message))
                 {
                     sb.AppendLine($"  {entry.Message}");
                 }
-                
+
                 if (entry.ByteCount > 0)
                 {
                     sb.AppendLine($"  Bytes: {entry.ByteCount}");
                 }
-                
+
                 sb.AppendLine();
             }
 

@@ -45,6 +45,8 @@ namespace Quintilink.ViewModels
         private Views.StatisticsWindow? _statisticsWindow;
         private System.Threading.Timer? _statisticsWindowUpdateTimer;
 
+        public IAsyncRelayCommand SendQuickMessageCommand { get; }
+
         [ObservableProperty]
         private string quickSendText = string.Empty;
 
@@ -130,7 +132,7 @@ namespace Quintilink.ViewModels
 
         partial void OnIsConnectedChanged(bool value)
         {
-            SendQuickMessageCommand.NotifyCanExecuteChanged();
+            SendQuickMessageCommand?.NotifyCanExecuteChanged();
         }
 
         // Serial Port Properties
@@ -237,6 +239,8 @@ namespace Quintilink.ViewModels
             _dialogService = dialogService;
             _dispatcherService = dispatcherService;
             _logExportService = new LogExportService();
+
+            SendQuickMessageCommand = new AsyncRelayCommand(SendQuickMessage, CanSendQuickMessage);
 
             _client.DataReceived += OnDataReceived;
 
@@ -874,7 +878,8 @@ namespace Quintilink.ViewModels
 
         private void AppendLog(string entry)
         {
-            string timestamp = DateTime.Now.ToString("HH:mm:ss");
+            var now = DateTime.Now;
+            string timestamp = now.ToString("HH:mm:ss");
             InvokeOnUiThread(() =>
             {
                 // Determine if this is an ASCII line
@@ -897,11 +902,11 @@ namespace Quintilink.ViewModels
                 LogHelper.AppendLogEntry(LogDocument, timestamp, prefix, content, isAsciiLine);
 
                 // Store log entry for export
-                StoreLogEntry(entry, prefix.Trim());
+                StoreLogEntry(now, entry, prefix.Trim());
             });
         }
 
-        private void StoreLogEntry(string entry, string prefix)
+        private void StoreLogEntry(DateTime timestamp, string entry, string prefix)
         {
             // Parse the entry to create a LogEntry object
             string direction = "SYS"; // Default
@@ -950,104 +955,19 @@ namespace Quintilink.ViewModels
             }
 
             var logEntry = new LogEntry(
-                DateTime.Now,
+                timestamp,
                 direction,
                 hexData,
                 asciiData,
                 message,
-                byteCount
+                byteCount,
+                isBookmarked: false
             );
 
             lock (_logEntriesLock)
             {
                 _logEntries.Add(logEntry);
             }
-        }
-
-        /// <summary>
-        /// Helper method to invoke actions on the UI thread
-        /// </summary>
-        private void InvokeOnUiThread(Action action)
-        {
-            if (_dispatcherService != null)
-            {
-                _dispatcherService.Invoke(action);
-            }
-            else
-            {
-                Application.Current?.Dispatcher?.Invoke(action);
-            }
-        }
-
-        private void StartStatisticsTimer()
-        {
-            // Update statistics every second
-            _statisticsUpdateTimer = new System.Threading.Timer(_ =>
-            {
-                // Timer callback runs on thread pool, no UI updates needed here
-            }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
-        }
-
-        private void StopStatisticsTimer()
-        {
-            _statisticsUpdateTimer?.Dispose();
-            _statisticsUpdateTimer = null;
-        }
-
-        [RelayCommand]
-        private void ShowStatistics()
-        {
-            // Toggle: if window is already open, close it
-            if (_statisticsWindow != null)
-            {
-                _statisticsWindow.Close();
-                _statisticsWindow = null;
-                _statisticsWindowUpdateTimer?.Dispose();
-                _statisticsWindowUpdateTimer = null;
-                return;
-            }
-
-            // Create and show new window
-            var statisticsViewModel = new StatisticsViewModel(_statistics);
-            statisticsViewModel.UpdateStatistics();
-
-            _statisticsWindow = new Views.StatisticsWindow
-            {
-                DataContext = statisticsViewModel,
-                Owner = Application.Current?.MainWindow
-            };
-
-            // Update statistics every second while window is open
-            _statisticsWindowUpdateTimer = new System.Threading.Timer(_ =>
-            {
-                InvokeOnUiThread(() => statisticsViewModel.UpdateStatistics());
-            }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
-
-            // Clean up when window is closed
-            _statisticsWindow.Closed += (s, e) =>
-            {
-                _statisticsWindowUpdateTimer?.Dispose();
-                _statisticsWindowUpdateTimer = null;
-                _statisticsWindow = null;
-            };
-
-            // Show non-modal window
-            _statisticsWindow.Show();
-        }
-
-        [RelayCommand]
-        private void CompareMessages()
-        {
-            var comparisonViewModel = new HexComparisonViewModel();
-            comparisonViewModel.LoadMessages(PredefinedMessages);
-
-            var comparisonWindow = new Views.HexComparisonWindow
-            {
-                DataContext = comparisonViewModel,
-                Owner = Application.Current?.MainWindow
-            };
-
-            comparisonWindow.ShowDialog();
         }
 
         [RelayCommand]
@@ -1065,113 +985,111 @@ namespace Quintilink.ViewModels
                 return;
             }
 
-            var bookmark = new LogBookmark
-            {
-                LogEntryIndex = currentIndex,
-                Description = $"Bookmark at {DateTime.Now:HH:mm:ss}",
-                LogEntryPreview = _logEntries[currentIndex].Message
-            };
-
-            _bookmarks.Add(bookmark);
-            AppendLog($"[SYS] Bookmark added: {bookmark.Description}");
-        }
-
-        [RelayCommand]
-        private void SearchHexPattern(string? pattern)
-        {
-            // Show search dialog
-            var searchViewModel = new SearchDialogViewModel();
-            var searchDialog = new Views.SearchDialog
-            {
-                DataContext = searchViewModel,
-                Owner = Application.Current?.MainWindow
-            };
-
-            searchViewModel.RequestClose += result => searchDialog.DialogResult = result;
-
-            if (searchDialog.ShowDialog() == true)
-            {
-                PerformSearch(searchViewModel.SearchPattern, 
-                             searchViewModel.SelectedDirection, 
-                             searchViewModel.CaseSensitive);
-            }
-        }
-
-        private void PerformSearch(string pattern, SearchDirection direction, bool caseSensitive)
-        {
-            List<LogEntry> results;
+            // Toggle breakpoint-like bookmark for the specific log entry
+            LogEntry entry;
             lock (_logEntriesLock)
             {
-                var comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
-                
-                results = _logEntries
-                    .Where(entry =>
-                    {
-                        // Filter by direction
-                        if (direction != SearchDirection.All && entry.Direction != direction.ToString())
-                            return false;
-
-                        // Search in hex data, ASCII data, and message
-                        return entry.HexData.Contains(pattern, comparison) ||
-                               entry.AsciiData.Contains(pattern, comparison) ||
-                               entry.Message.Contains(pattern, comparison);
-                    })
-                    .ToList();
+                entry = _logEntries[currentIndex];
+                entry.IsBookmarked = !entry.IsBookmarked;
             }
 
-            // Show results window
-            var resultsViewModel = new SearchResultsViewModel();
-            resultsViewModel.LoadResults(pattern, results);
-
-            var resultsWindow = new Views.SearchResultsWindow
+            if (entry.IsBookmarked)
             {
-                DataContext = resultsViewModel,
-                Owner = Application.Current?.MainWindow
-            };
+                var bookmark = new LogBookmark
+                {
+                    LogEntryIndex = currentIndex,
+                    Description = $"Bookmark at {entry.Timestamp:HH:mm:ss}",
+                    LogEntryPreview = entry.Message
+                };
 
-            resultsWindow.Show();
+                _bookmarks.RemoveAll(b => b.LogEntryIndex == currentIndex);
+                _bookmarks.Add(bookmark);
+            }
+            else
+            {
+                _bookmarks.RemoveAll(b => b.LogEntryIndex == currentIndex);
+            }
+
+            // Update the visual line in the FlowDocument to show/remove breakpoint dot
+            InvokeOnUiThread(() => ToggleBookmarkDotInDocument(currentIndex, entry.IsBookmarked));
         }
 
-        [RelayCommand]
-        private void ConfigureByteHighlighting()
+        private void ToggleBookmarkDotInDocument(int logEntryIndex, bool isBookmarked)
         {
-            // Initialize default ranges if empty
-            if (_highlightRanges.Count == 0)
+            if (LogDocument.Blocks.Count == 0)
+                return;
+
+            var paragraph = LogDocument.Blocks.ElementAtOrDefault(logEntryIndex) as Paragraph;
+            if (paragraph == null)
+                return;
+
+            // Recreate line based on stored LogEntry so formatting stays correct
+            LogEntry entry;
+            lock (_logEntriesLock)
             {
-                _highlightRanges.Add(new ByteHighlightRange
-                {
-                    Name = "Control Characters",
-                    RangeStart = 0x00,
-                    RangeEnd = 0x1F,
-                    Color = "#FFE6E6",
-                    IsEnabled = true
-                });
+                if (logEntryIndex < 0 || logEntryIndex >= _logEntries.Count)
+                    return;
 
-                _highlightRanges.Add(new ByteHighlightRange
-                {
-                    Name = "Printable ASCII",
-                    RangeStart = 0x20,
-                    RangeEnd = 0x7E,
-                    Color = "#E6FFE6",
-                    IsEnabled = true
-                });
-
-                _highlightRanges.Add(new ByteHighlightRange
-                {
-                    Name = "Extended ASCII",
-                    RangeStart = 0x7F,
-                    RangeEnd = 0xFF,
-                    Color = "#E6E6FF",
-                    IsEnabled = true
-                });
+                entry = _logEntries[logEntryIndex];
             }
 
-            _dialogService?.ShowMessage("Byte Highlighting", 
-                $"Configured {_highlightRanges.Count} highlight ranges:\n\n" +
-                string.Join("\n", _highlightRanges.Select(r => $"• {r.Name}: 0x{r.RangeStart:X2}-0x{r.RangeEnd:X2}")));
+            bool isAsciiLine = entry.Message.StartsWith("[RX] ASCII:") || entry.Message.StartsWith("[TX] ASCII:");
+
+            string prefix = "";
+            string content = entry.Message;
+
+            if (content.StartsWith("["))
+            {
+                int endBracket = content.IndexOf(']');
+                if (endBracket > 0)
+                {
+                    prefix = content.Substring(0, endBracket + 1) + " ";
+                    content = content.Substring(endBracket + 2);
+                }
+            }
+
+            // Render into a temp doc then copy inlines over
+            var tempDoc = LogHelper.CreateLogDocument();
+            LogHelper.AppendLogEntry(tempDoc, entry.Timestamp.ToString("HH:mm:ss"), prefix, content, isAsciiLine, isBookmarked);
+
+            var tmpParagraph = tempDoc.Blocks.LastBlock as Paragraph;
+            if (tmpParagraph == null)
+                return;
+
+            paragraph.Inlines.Clear();
+            foreach (var inline in tmpParagraph.Inlines.ToList())
+            {
+                tmpParagraph.Inlines.Remove(inline);
+                paragraph.Inlines.Add(inline);
+            }
         }
 
-        [RelayCommand(CanExecute = nameof(CanSendQuickMessage))]
+        private void InvokeOnUiThread(Action action)
+        {
+            if (_dispatcherService != null)
+            {
+                _dispatcherService.Invoke(action);
+            }
+            else
+            {
+                Application.Current?.Dispatcher?.Invoke(action);
+            }
+        }
+
+        private void StartStatisticsTimer()
+        {
+            _statisticsUpdateTimer = new System.Threading.Timer(_ =>
+            {
+                // Timer callback runs on thread pool, no UI updates needed here
+            }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        }
+
+        private void StopStatisticsTimer()
+        {
+            _statisticsUpdateTimer?.Dispose();
+            _statisticsUpdateTimer = null;
+        }
+
         private async Task SendQuickMessage()
         {
             try
