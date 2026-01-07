@@ -97,9 +97,5 @@ namespace Quintilink.Views
             }
         }
 
-        private void RadioButton_Checked()
-        {
-
-        }
     }
 }
