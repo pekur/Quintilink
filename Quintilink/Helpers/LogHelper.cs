@@ -15,7 +15,7 @@ namespace Quintilink.Helpers
         private static readonly Brush DimGreenBrush = new SolidColorBrush(Color.FromRgb(0x87, 0xdb, 0x9c));
         private static readonly Brush BlueBrush = new SolidColorBrush(Color.FromRgb(0x04, 0x51, 0xb5));
         private static readonly Brush DimBlueBrush = new SolidColorBrush(Color.FromRgb(0x87, 0xbf, 0xde));
-        private static readonly Brush BookmarkBrush = new SolidColorBrush(Color.FromRgb(0xE5, 0x14, 0x00));
+        private static readonly Brush BookmarkBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x14, 0xe5));
 
         public static FlowDocument CreateLogDocument()
         {
@@ -37,32 +37,27 @@ namespace Quintilink.Helpers
             var paragraph = new Paragraph { Margin = new Thickness(0) };
 
             const double gutterWidth = 18;
-            const double dotSize = 12;
 
             // Fixed-width gutter so the rest of the text never shifts.
-            var gutter = new Grid
+            var gutterInline = new InlineUIContainer(new Border
             {
                 Width = gutterWidth,
-                Height = dotSize,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
-            if (isBookmarked)
-            {
-                gutter.Children.Add(new Ellipse
-                {
-                    Width = dotSize,
-                    Height = dotSize,
-                    Fill = BookmarkBrush,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                });
-            }
-
-            var gutterInline = new InlineUIContainer(gutter)
+                Child = isBookmarked
+                    ? new TextBlock
+                    {
+                        Text = "\uE840", // Bookmark (Segoe MDL2 Assets)
+                        FontFamily = new FontFamily("Segoe MDL2 Assets"),
+                        Foreground = BookmarkBrush,
+                        FontSize = 14,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        HorizontalAlignment = HorizontalAlignment.Center
+                    }
+                    : null
+            })
             {
                 BaselineAlignment = BaselineAlignment.Center
             };
+
             paragraph.Inlines.Add(gutterInline);
 
             // Add timestamp in gray
