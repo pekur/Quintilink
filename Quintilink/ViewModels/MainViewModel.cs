@@ -1015,6 +1015,42 @@ namespace Quintilink.ViewModels
             InvokeOnUiThread(() => ToggleBookmarkDotInDocument(currentIndex, entry.IsBookmarked));
         }
 
+        [RelayCommand]
+        private void ToggleBookmarkAtIndex(int logEntryIndex)
+        {
+            if (logEntryIndex < 0)
+                return;
+
+            LogEntry entry;
+            lock (_logEntriesLock)
+            {
+                if (logEntryIndex >= _logEntries.Count)
+                    return;
+
+                entry = _logEntries[logEntryIndex];
+                entry.IsBookmarked = !entry.IsBookmarked;
+            }
+
+            if (entry.IsBookmarked)
+            {
+                var bookmark = new LogBookmark
+                {
+                    LogEntryIndex = logEntryIndex,
+                    Description = $"Bookmark at {entry.Timestamp:HH:mm:ss}",
+                    LogEntryPreview = entry.Message
+                };
+
+                _bookmarks.RemoveAll(b => b.LogEntryIndex == logEntryIndex);
+                _bookmarks.Add(bookmark);
+            }
+            else
+            {
+                _bookmarks.RemoveAll(b => b.LogEntryIndex == logEntryIndex);
+            }
+
+            InvokeOnUiThread(() => ToggleBookmarkDotInDocument(logEntryIndex, entry.IsBookmarked));
+        }
+
         private void ToggleBookmarkDotInDocument(int logEntryIndex, bool isBookmarked)
         {
             if (LogDocument.Blocks.Count == 0)
