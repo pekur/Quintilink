@@ -454,29 +454,66 @@
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
 
-                                            <TextBlock Grid.Row="0" Text="{Binding Value.Name}" FontWeight="SemiBold" FontSize="13"/>
+                                            <!-- Pause / Play toggle button -->
+                                            <ui:Button Grid.Column="0"
+                                                       Command="{Binding DataContext.TogglePauseReactionCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                       CommandParameter="{Binding}"
+                                                       ToolTip="Pause / resume auto-response"
+                                                       Padding="4" Margin="0,0,6,0" Background="Transparent" VerticalAlignment="Center">
+                                                <ui:SymbolIcon FontSize="14">
+                                                    <ui:SymbolIcon.Style>
+                                                        <Style TargetType="ui:SymbolIcon">
+                                                            <Setter Property="Symbol" Value="Pause16"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Value.IsPaused}" Value="True">
+                                                                    <Setter Property="Symbol" Value="Play16"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </ui:SymbolIcon.Style>
+                                                </ui:SymbolIcon>
+                                            </ui:Button>
 
-                                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,2,0,0">
-                                                <TextBlock Text="Trigger: " FontSize="11" Foreground="Gray"/>
-                                                <TextBlock Text="{Binding Key}" FontSize="11" FontFamily="Consolas"/>
-                                            </StackPanel>
+                                            <Grid Grid.Column="1">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
 
-                                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,2,0,0">
-                                                <TextBlock Text="ASCII: " FontSize="11" Foreground="Gray"/>
-                                                <TextBlock Text="{Binding Value.DisplayAscii}" FontSize="11" FontFamily="Consolas"/>
-                                            </StackPanel>
+                                                <TextBlock Grid.Row="0" Text="{Binding Value.Name}" FontWeight="SemiBold" FontSize="13">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Value.IsPaused}" Value="True">
+                                                                    <Setter Property="Opacity" Value="0.5"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
 
-                                            <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,2,0,0">
-                                                <TextBlock Text="HEX: " FontSize="11" Foreground="Gray"/>
-                                                <TextBlock Text="{Binding Value.DisplayHex}" FontSize="11" FontFamily="Consolas"/>
-                                            </StackPanel>
+                                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,2,0,0">
+                                                    <TextBlock Text="Trigger: " FontSize="11" Foreground="Gray"/>
+                                                    <TextBlock Text="{Binding Key}" FontSize="11" FontFamily="Consolas"/>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,2,0,0">
+                                                    <TextBlock Text="ASCII: " FontSize="11" Foreground="Gray"/>
+                                                    <TextBlock Text="{Binding Value.DisplayAscii}" FontSize="11" FontFamily="Consolas"/>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,2,0,0">
+                                                    <TextBlock Text="HEX: " FontSize="11" Foreground="Gray"/>
+                                                    <TextBlock Text="{Binding Value.DisplayHex}" FontSize="11" FontFamily="Consolas"/>
+                                                </StackPanel>
+                                            </Grid>
                                         </Grid>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>

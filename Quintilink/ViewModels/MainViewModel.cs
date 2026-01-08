@@ -817,6 +817,21 @@ namespace Quintilink.ViewModels
             }
         }
 
+        [RelayCommand]
+        private void TogglePauseReaction(KeyValuePair<string, MessageDefinition>? item)
+        {
+            if (item is null) return;
+
+            var trigger = item.Value.Key;
+            if (!_reactions.TryGetValue(trigger, out var def))
+                return;
+
+            def.IsPaused = !def.IsPaused;
+
+            RefreshReactions();
+            SaveMessages();
+        }
+
         private void RefreshReactions()
         {
             Reactions.Clear();
@@ -852,7 +867,8 @@ namespace Quintilink.ViewModels
         {
             if (_reactions.TryGetValue(hex, out var response))
             {
-                await SendReaction(hex, response);
+                if (!response.IsPaused)
+                    await SendReaction(hex, response);
                 return;
             }
 
@@ -861,7 +877,8 @@ namespace Quintilink.ViewModels
                 var trigger = kv.Key;
                 if (hex.StartsWith(trigger, StringComparison.OrdinalIgnoreCase))
                 {
-                    await SendReaction(trigger, kv.Value);
+                    if (!kv.Value.IsPaused)
+                        await SendReaction(trigger, kv.Value);
                     return;
                 }
             }

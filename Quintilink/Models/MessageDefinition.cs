@@ -11,6 +11,11 @@ public class MessageDefinition
 
     public int DelayMs { get; set; }
 
+    /// <summary>
+    /// When true, this reaction is skipped during auto-response triggering.
+    /// </summary>
+    public bool IsPaused { get; set; }
+
 
     public MessageDefinition() { }
 

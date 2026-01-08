@@ -15,6 +15,7 @@ namespace Quintilink.Models
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public int DelayMs { get; set; } = 0;
+        public bool IsPaused { get; set; }
 
         public MessageDto() { }
 
@@ -23,10 +24,11 @@ namespace Quintilink.Models
             Name = def.Name;
             Content = def.Content;
             DelayMs = def.DelayMs;
+            IsPaused = def.IsPaused;
         }
 
         public MessageDefinition ToDefinition()
-            => new MessageDefinition(Name, Content, DelayMs);
+            => new MessageDefinition(Name, Content, DelayMs) { IsPaused = IsPaused };
     }
 
     public static class MessageStore
