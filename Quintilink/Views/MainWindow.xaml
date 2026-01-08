@@ -470,7 +470,7 @@
                                                         <Style TargetType="ui:SymbolIcon">
                                                             <Setter Property="Symbol" Value="Pause16"/>
                                                             <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding Value.IsPaused}" Value="True">
+                                                                <DataTrigger Binding="{Binding Response.IsPaused}" Value="True">
                                                                     <Setter Property="Symbol" Value="Play16"/>
                                                                 </DataTrigger>
                                                             </Style.Triggers>
@@ -487,11 +487,11 @@
                                                     <RowDefinition Height="Auto"/>
                                                 </Grid.RowDefinitions>
 
-                                                <TextBlock Grid.Row="0" Text="{Binding Value.Name}" FontWeight="SemiBold" FontSize="13">
+                                                <TextBlock Grid.Row="0" Text="{Binding Response.Name}" FontWeight="SemiBold" FontSize="13">
                                                     <TextBlock.Style>
                                                         <Style TargetType="TextBlock">
                                                             <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding Value.IsPaused}" Value="True">
+                                                                <DataTrigger Binding="{Binding Response.IsPaused}" Value="True">
                                                                     <Setter Property="Opacity" Value="0.5"/>
                                                                 </DataTrigger>
                                                             </Style.Triggers>
@@ -501,17 +501,17 @@
 
                                                 <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,2,0,0">
                                                     <TextBlock Text="Trigger: " FontSize="11" Foreground="Gray"/>
-                                                    <TextBlock Text="{Binding Key}" FontSize="11" FontFamily="Consolas"/>
+                                                    <TextBlock Text="{Binding Trigger}" FontSize="11" FontFamily="Consolas"/>
                                                 </StackPanel>
 
                                                 <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,2,0,0">
                                                     <TextBlock Text="ASCII: " FontSize="11" Foreground="Gray"/>
-                                                    <TextBlock Text="{Binding Value.DisplayAscii}" FontSize="11" FontFamily="Consolas"/>
+                                                    <TextBlock Text="{Binding Response.DisplayAscii}" FontSize="11" FontFamily="Consolas"/>
                                                 </StackPanel>
 
                                                 <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,2,0,0">
                                                     <TextBlock Text="HEX: " FontSize="11" Foreground="Gray"/>
-                                                    <TextBlock Text="{Binding Value.DisplayHex}" FontSize="11" FontFamily="Consolas"/>
+                                                    <TextBlock Text="{Binding Response.DisplayHex}" FontSize="11" FontFamily="Consolas"/>
                                                 </StackPanel>
                                             </Grid>
                                         </Grid>

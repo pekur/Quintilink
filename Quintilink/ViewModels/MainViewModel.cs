@@ -221,10 +221,10 @@ namespace Quintilink.ViewModels
 
         public ObservableCollection<MessageDefinition> PredefinedMessages { get; } = new();
 
-        private readonly Dictionary<string, MessageDefinition> _reactions = new();
+        // Reactions now stored as list to allow multiple responses per trigger
+        private readonly List<ReactionItem> _reactions = new();
 
-        public ObservableCollection<KeyValuePair<string, MessageDefinition>> Reactions { get; }
-            = new ObservableCollection<KeyValuePair<string, MessageDefinition>>();
+        public ObservableCollection<ReactionItem> Reactions { get; } = new();
 
         [ObservableProperty]
         public string title = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name ?? string.Empty;
@@ -246,19 +246,19 @@ namespace Quintilink.ViewModels
             _client.DataReceived += OnDataReceived;
 
             _client.Disconnected += remote =>
-        {
-            InvokeOnUiThread(() =>
-             {
-                 AppendLog(remote
-                     ? "[SYS] Disconnected by remote host"
-                : "[SYS] Disconnected");
+            {
+                InvokeOnUiThread(() =>
+                {
+                    AppendLog(remote
+                        ? "[SYS] Disconnected by remote host"
+                        : "[SYS] Disconnected");
 
-                 IsConnected = false;
-                 ConnectCommand.NotifyCanExecuteChanged();
-                 DisconnectCommand.NotifyCanExecuteChanged();
-                 UpdateServerStatus();
-             });
-        };
+                    IsConnected = false;
+                    ConnectCommand.NotifyCanExecuteChanged();
+                    DisconnectCommand.NotifyCanExecuteChanged();
+                    UpdateServerStatus();
+                });
+            };
 
             _server.DataReceived += async (endpoint, data) =>
             {
@@ -290,8 +290,8 @@ namespace Quintilink.ViewModels
 
             _serialPort.DataReceived += OnDataReceived;
             _serialPort.Disconnected += remote =>
-        {
-            InvokeOnUiThread(() =>
+            {
+                InvokeOnUiThread(() =>
     {
         AppendLog(remote
         ? "[SYS] Serial port disconnected (error)"
@@ -320,8 +320,11 @@ namespace Quintilink.ViewModels
                 PredefinedMessages.Add(dto.ToDefinition());
 
             _reactions.Clear();
-            foreach (var kv in loaded.Reactions)
-                _reactions[kv.Key] = kv.Value.ToDefinition();
+            foreach (var dto in loaded.ReactionsList)
+            {
+                var (trigger, def) = dto.ToReaction();
+                _reactions.Add(new ReactionItem(trigger, def));
+            }
 
             RefreshReactions();
 
@@ -448,9 +451,9 @@ namespace Quintilink.ViewModels
                 PredefinedMessages = PredefinedMessages
                     .Select(m => new MessageDto(m))
                     .ToList(),
-                Reactions = _reactions.ToDictionary(
-                    kv => kv.Key,
-                    kv => new MessageDto(kv.Value))
+                ReactionsList = _reactions
+                    .Select(r => new ReactionDto(r.Trigger, r.Response))
+                    .ToList()
             };
 
             MessageStore.Save(storage);
@@ -753,7 +756,7 @@ namespace Quintilink.ViewModels
                 var result = await _dialogService.ShowDialogAsync(vm);
                 if (result == true)
                 {
-                    _reactions[vm.Trigger] = vm.ToDefinition();
+                    _reactions.Add(new ReactionItem(vm.Trigger, vm.ToDefinition()));
                     RefreshReactions();
                     SaveMessages();
                 }
@@ -765,7 +768,7 @@ namespace Quintilink.ViewModels
 
                 if (dlg.ShowDialog() == true)
                 {
-                    _reactions[vm.Trigger] = vm.ToDefinition();
+                    _reactions.Add(new ReactionItem(vm.Trigger, vm.ToDefinition()));
                     RefreshReactions();
                     SaveMessages();
                 }
@@ -773,21 +776,24 @@ namespace Quintilink.ViewModels
         }
 
         [RelayCommand]
-        private async Task EditReaction(KeyValuePair<string, MessageDefinition>? item)
+        private async Task EditReaction(ReactionItem? item)
         {
             if (item is null) return;
 
-            var vm = new ResponseEditorViewModel(item.Value.Key, item.Value.Value);
+            var vm = new ResponseEditorViewModel(item.Trigger, item.Response);
 
             if (_dialogService != null)
             {
                 var result = await _dialogService.ShowDialogAsync(vm);
                 if (result == true)
                 {
-                    _reactions.Remove(item.Value.Key);
-                    _reactions[vm.Trigger] = vm.ToDefinition();
-                    RefreshReactions();
-                    SaveMessages();
+                    var idx = _reactions.IndexOf(item);
+                    if (idx >= 0)
+                    {
+                        _reactions[idx] = new ReactionItem(vm.Trigger, vm.ToDefinition());
+                        RefreshReactions();
+                        SaveMessages();
+                    }
                 }
             }
             else
@@ -797,20 +803,23 @@ namespace Quintilink.ViewModels
 
                 if (dlg.ShowDialog() == true)
                 {
-                    _reactions.Remove(item.Value.Key);
-                    _reactions[vm.Trigger] = vm.ToDefinition();
-                    RefreshReactions();
-                    SaveMessages();
+                    var idx = _reactions.IndexOf(item);
+                    if (idx >= 0)
+                    {
+                        _reactions[idx] = new ReactionItem(vm.Trigger, vm.ToDefinition());
+                        RefreshReactions();
+                        SaveMessages();
+                    }
                 }
             }
         }
 
         [RelayCommand]
-        private void DeleteReaction(KeyValuePair<string, MessageDefinition>? item)
+        private void DeleteReaction(ReactionItem? item)
         {
             if (item is null) return;
 
-            if (_reactions.Remove(item.Value.Key))
+            if (_reactions.Remove(item))
             {
                 RefreshReactions();
                 SaveMessages();
@@ -818,15 +827,11 @@ namespace Quintilink.ViewModels
         }
 
         [RelayCommand]
-        private void TogglePauseReaction(KeyValuePair<string, MessageDefinition>? item)
+        private void TogglePauseReaction(ReactionItem? item)
         {
             if (item is null) return;
 
-            var trigger = item.Value.Key;
-            if (!_reactions.TryGetValue(trigger, out var def))
-                return;
-
-            def.IsPaused = !def.IsPaused;
+            item.Response.IsPaused = !item.Response.IsPaused;
 
             RefreshReactions();
             SaveMessages();
@@ -835,8 +840,8 @@ namespace Quintilink.ViewModels
         private void RefreshReactions()
         {
             Reactions.Clear();
-            foreach (var kv in _reactions)
-                Reactions.Add(kv);
+            foreach (var r in _reactions)
+                Reactions.Add(r);
         }
 
         private async void OnDataReceived(byte[] data)
@@ -865,21 +870,29 @@ namespace Quintilink.ViewModels
 
         private async Task CheckReaction(string hex)
         {
-            if (_reactions.TryGetValue(hex, out var response))
+            // Send ALL matching non-paused reactions (exact match first, then prefix)
+            bool exactMatched = false;
+
+            foreach (var item in _reactions)
             {
-                if (!response.IsPaused)
-                    await SendReaction(hex, response);
-                return;
+                if (string.Equals(item.Trigger, hex, StringComparison.OrdinalIgnoreCase))
+                {
+                    exactMatched = true;
+                    if (!item.Response.IsPaused)
+                        await SendReaction(item.Trigger, item.Response);
+                }
             }
 
-            foreach (var kv in _reactions)
+            if (exactMatched)
+                return;
+
+            // Prefix matches
+            foreach (var item in _reactions)
             {
-                var trigger = kv.Key;
-                if (hex.StartsWith(trigger, StringComparison.OrdinalIgnoreCase))
+                if (hex.StartsWith(item.Trigger, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!kv.Value.IsPaused)
-                        await SendReaction(trigger, kv.Value);
-                    return;
+                    if (!item.Response.IsPaused)
+                        await SendReaction(item.Trigger, item.Response);
                 }
             }
         }
