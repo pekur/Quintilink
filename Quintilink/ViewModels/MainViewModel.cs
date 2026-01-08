@@ -1338,5 +1338,24 @@ namespace Quintilink.ViewModels
                 .Where(e => DirectionMatch(e) && (e.Message ?? string.Empty).Contains(filter.Pattern, comparison))
                 .ToList();
         }
+
+        [RelayCommand]
+        private void CompareMessages()
+        {
+            InvokeOnUiThread(() =>
+            {
+                var vm = new HexComparisonViewModel();
+                vm.LoadMessages(PredefinedMessages);
+
+                var wnd = new Views.HexComparisonWindow
+                {
+                    DataContext = vm,
+                    Owner = Application.Current?.MainWindow,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+
+                wnd.Show();
+            });
+        }
     }
 }
