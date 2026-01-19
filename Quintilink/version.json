@@ -3,5 +3,8 @@
   "tagPrefix": "Release_",
   "publicReleaseRefSpec": [
     "^refs/tags/Release_\\d+\\.\\d+\\.\\d+$"
-  ]
+  ],
+  "cloudBuild": {
+    "setAllVariables": true
+  }
 }
