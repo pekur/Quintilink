@@ -1,0 +1,74 @@
+Quintilink Non-Commercial License
+
+Copyright (c) 2024 pekur
+
+## Terms and Conditions
+
+### 1. Definitions
+
+"Software" means the Quintilink application and all associated source code, 
+documentation, and related files.
+
+"Commercial Use" means any use of the Software that is primarily intended for 
+or directed toward commercial advantage or monetary compensation. This includes, 
+but is not limited to:
+- Using the Software in a business environment for business purposes
+- Selling, licensing, or distributing the Software for a fee
+- Using the Software to provide paid services to third parties
+- Incorporating the Software into a commercial product or service
+
+"Non-Commercial Use" means personal, educational, research, or evaluation use 
+that is not Commercial Use.
+
+### 2. Grant of License
+
+Subject to the terms of this License, the copyright holder grants you a 
+non-exclusive, non-transferable, royalty-free license to:
+
+a) Use, copy, and modify the Software for Non-Commercial Use only.
+b) Distribute copies of the Software for Non-Commercial Use only, provided 
+   that you include a copy of this License with each copy.
+
+### 3. Commercial Use Requires a Separate License
+
+Commercial Use of the Software is NOT permitted under this License. 
+
+If you wish to use the Software for Commercial Use, you must obtain a 
+separate commercial license from the copyright holder. 
+
+For commercial licensing inquiries, please contact: [Contact via GitHub Issues]
+
+### 4. Restrictions
+
+You may NOT:
+a) Use the Software for Commercial Use without a separate commercial license
+b) Remove or alter any copyright notices or this License from the Software
+c) Sublicense, sell, or transfer the Software to third parties for Commercial Use
+d) Use the Software in any way that violates applicable laws
+
+### 5. Attribution
+
+If you distribute or publicly use the Software, you must:
+a) Give appropriate credit to the original author
+b) Provide a link to this License
+c) Indicate if changes were made
+
+### 6. No Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+### 7. Termination
+
+This License automatically terminates if you violate any of its terms. Upon 
+termination, you must cease all use of the Software and destroy all copies 
+in your possession.
+
+---
+
+For commercial licensing options, please open an issue on the GitHub repository 
+or contact the author directly.
