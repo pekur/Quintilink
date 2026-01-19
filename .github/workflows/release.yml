@@ -50,9 +50,26 @@ jobs:
           Compress-Archive -Path publish\* -DestinationPath $zipName
           echo "zipfile=$zipName" >> $GITHUB_OUTPUT
 
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get previous tag (fallback to first commit if none)
+          $prevTag = git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1) 2>$null
+          if (-not $prevTag) { $prevTag = $(git rev-list --max-parents=0 HEAD) }
+
+          # Get current tag
+          $currentTag = "${GITHUB_REF_NAME}"
+
+          # Get commit messages between previous and current tag (skip merges)
+          $commits = git log $prevTag..$currentTag --pretty=format:"- %s" --no-merges
+          if (-not $commits) { $commits = "No changes" }
+
+          echo "changelog=$commits" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.changelog }}
           files: ${{ steps.zip.outputs.zipfile }}
