@@ -1,6 +1,6 @@
 Quintilink Non-Commercial License
 
-Copyright (c) 2024 pekur
+Copyright (c) 2026 Petr Kurka
 
 ## Terms and Conditions
 
@@ -36,7 +36,7 @@ Commercial Use of the Software is NOT permitted under this License.
 If you wish to use the Software for Commercial Use, you must obtain a 
 separate commercial license from the copyright holder. 
 
-For commercial licensing inquiries, please contact: [Contact via GitHub Issues]
+For commercial licensing inquiries, please contact: petr.kurka@gmail.com
 
 ### 4. Restrictions
 
@@ -67,6 +67,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 This License automatically terminates if you violate any of its terms. Upon 
 termination, you must cease all use of the Software and destroy all copies 
 in your possession.
+
+### 8. Contributions
+
+By submitting a contribution (pull request, patch, or any other form) to this 
+Software, you agree to:
+a) Grant the copyright holder a perpetual, worldwide, non-exclusive, royalty-free 
+   license to use, modify, and distribute your contribution under any license
+b) Confirm that you have the right to grant such license
+c) Understand that your contribution may be used in both free and commercial 
+   versions of the Software
 
 ---
 
