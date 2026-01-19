@@ -26,11 +26,14 @@ jobs:
       - name: Restore
         run: dotnet restore
 
+      - name: Install nbgv
+        run: dotnet tool install --global nbgv
+      
       - name: Get version
         id: version
         run: |
-          $version = dotnet msbuild -getProperty:Version
-          echo "version=$version" >> $GITHUB_OUTPUT          
+          $version = nbgv get-version -v SemVer2
+          echo "version=$version" >> $GITHUB_OUTPUT       
 
       - name: Publish
         run: |
