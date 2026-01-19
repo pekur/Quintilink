@@ -59,15 +59,20 @@ jobs:
           # Get previous tag (fallback to first commit if none)
           $prevTag = git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1) 2>$null
           if (-not $prevTag) { $prevTag = $(git rev-list --max-parents=0 HEAD) }
-
+          
           # Get current tag
-          $currentTag = "${GITHUB_REF_NAME}"
-
+          $currentTag = "${{ github.ref_name }}"
+          
           # Get commit messages between previous and current tag (skip merges)
-          $commits = git log $prevTag..$currentTag --pretty=format:"- %s" --no-merges
+          $range = "$prevTag..$currentTag"
+          $commits = git log --no-merges --pretty=format:"- %s" $range
           if (-not $commits) { $commits = "No changes" }
-
-          echo "changelog=$commits" >> $GITHUB_OUTPUT
+          
+          # Handle multiline output for GitHub Actions
+          $commits = $commits -join "`n"
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$commits" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
