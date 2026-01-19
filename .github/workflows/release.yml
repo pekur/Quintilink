@@ -29,8 +29,8 @@ jobs:
       - name: Get version
         id: version
         run: |
-          $version = dotnet nbgv get-version --format SemVer
-          echo "version=$version" >> $GITHUB_OUTPUT
+          $version = dotnet msbuild -getProperty:Version
+          echo "version=$version" >> $GITHUB_OUTPUT          
 
       - name: Publish
         run: |
