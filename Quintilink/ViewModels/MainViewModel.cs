@@ -1255,6 +1255,22 @@ namespace Quintilink.ViewModels
         }
 
         [RelayCommand]
+        private void ShowAbout()
+        {
+            InvokeOnUiThread(() =>
+            {
+                var vm = new AboutViewModel();
+                var aboutWindow = new Views.AboutWindow
+                {
+                    DataContext = vm,
+                    Owner = Application.Current?.MainWindow,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+                aboutWindow.ShowDialog();
+            });
+        }
+
+        [RelayCommand]
         private async Task SearchHexPattern()
         {
             var vm = new SearchDialogViewModel();

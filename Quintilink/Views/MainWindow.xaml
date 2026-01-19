@@ -262,10 +262,17 @@
                         </StackPanel>
                     </ui:Button>
 
-                    <ui:Button Command="{Binding ShowStatisticsCommand}" ToolTip="View connection statistics" Background="Transparent" VerticalAlignment="Center" Padding="6,4" Margin="0,0,12,0">
+                    <ui:Button Command="{Binding ShowStatisticsCommand}" ToolTip="View connection statistics" Background="Transparent" VerticalAlignment="Center" Padding="6,4" Margin="0,0,6,0">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="DataBarVertical24" FontSize="16" Margin="0,0,4,0"/>
                             <TextBlock Text="Stats" FontSize="11" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </ui:Button>
+
+                    <ui:Button Command="{Binding ShowAboutCommand}" ToolTip="About Quintilink" Background="Transparent" VerticalAlignment="Center" Padding="6,4" Margin="0,0,12,0">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Info16" FontSize="16" Margin="0,0,4,0"/>
+                            <TextBlock Text="About" FontSize="11" FontWeight="SemiBold"/>
                         </StackPanel>
                     </ui:Button>
 
