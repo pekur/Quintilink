@@ -44,14 +44,26 @@ jobs:
             -p:PublishSingleFile=true `
             -p:IncludeNativeLibrariesForSelfExtract=true `
             -o publish
-
+      
       - name: Zip
         id: zip
         run: |
           $version = "${{ steps.version.outputs.version }}"
           $zipName = "Quintilink-$version-win-x64.zip"
+          
+          # Debug - list publish folder
+          Write-Host "Contents of publish folder:"
+          Get-ChildItem -Path publish
+          
           Compress-Archive -Path publish\* -DestinationPath $zipName
-          echo "zipfile=$zipName" >> $GITHUB_OUTPUT
+          
+          # Debug - verify zip exists
+          Write-Host "Created zip file:"
+          Get-ChildItem -Path $zipName
+          
+          # Use full path
+          $zipPath = (Resolve-Path $zipName).Path
+          echo "zipfile=$zipPath" >> $GITHUB_OUTPUT
 
       - name: Generate changelog
         id: changelog
@@ -78,6 +90,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
+          name: Release ${{ steps.version.outputs.version }}
           body: ${{ steps.changelog.outputs.changelog }}
-          files: ${{ steps.zip.outputs.zipfile }}
+          files: ./*.zip
+
+      - name: Debug outputs
+        run: |
+          Write-Host "Version: ${{ steps.version.outputs.version }}"
+          Write-Host "Zip file: ${{ steps.zip.outputs.zipfile }}"
+          Get-ChildItem -Path . -Filter *.zip
