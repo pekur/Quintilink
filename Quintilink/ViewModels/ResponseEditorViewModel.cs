@@ -18,6 +18,9 @@ public partial class ResponseEditorViewModel : ObservableObject
     private string trigger = string.Empty;
 
     [ObservableProperty]
+    private string triggerAscii = string.Empty;
+
+    [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     [NotifyPropertyChangedFor(nameof(IsValid))]
     private string name = string.Empty;
@@ -51,6 +54,7 @@ public partial class ResponseEditorViewModel : ObservableObject
     public ResponseEditorViewModel(string trigger, MessageDefinition def)
     {
         Trigger = trigger;
+        TriggerAscii = CollapseToAscii(FromHex(trigger));
         Name = def.Name;
         Hex = MessageDefinition.ToSpacedHex(def.GetBytes());
         // Use macro-based ASCII representation
@@ -111,13 +115,37 @@ public partial class ResponseEditorViewModel : ObservableObject
 
     partial void OnTriggerChanged(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            return;
+        if (_isUpdating) return;
+        try
+        {
+            _isUpdating = true;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                TriggerAscii = string.Empty;
+                return;
+            }
 
-        // Normalize just like Hex
-        var clean = Regex.Replace(value, @"[^0-9A-Fa-f]", "");
-        if (clean.Length % 2 == 0)
-            Trigger = NormalizeHex(value);  // reuse the same NormalizeHex you already have
+            // Normalize just like Hex
+            var clean = Regex.Replace(value, @"[^0-9A-Fa-f]", "");
+            if (clean.Length % 2 == 0)
+            {
+                Trigger = NormalizeHex(value);
+                TriggerAscii = CollapseToAscii(FromHex(Trigger));
+            }
+        }
+        finally { _isUpdating = false; }
+    }
+
+    partial void OnTriggerAsciiChanged(string value)
+    {
+        if (_isUpdating) return;
+        try
+        {
+            _isUpdating = true;
+            var bytes = ExpandAsciiToBytes(value ?? string.Empty);
+            Trigger = MessageDefinition.ToSpacedHex(bytes);
+        }
+        finally { _isUpdating = false; }
     }
 
     public void NormalizeHexField()
