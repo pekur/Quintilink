@@ -16,6 +16,10 @@ public class MessageDefinition
     /// </summary>
     public bool IsPaused { get; set; }
 
+    public int Priority { get; set; }
+
+    public bool StopAfterMatch { get; set; }
+
 
     public MessageDefinition() { }
 

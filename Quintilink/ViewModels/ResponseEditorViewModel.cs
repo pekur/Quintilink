@@ -36,18 +36,28 @@ public partial class ResponseEditorViewModel : ObservableObject
     private string delayMs = "0";
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    [NotifyPropertyChangedFor(nameof(IsValid))]
+    private string priority = "0";
+
+    [ObservableProperty]
+    private bool stopAfterMatch;
+
+    [ObservableProperty]
     private string ascii = string.Empty;
 
     [ObservableProperty]
     private bool isHexValid = true;
 
     public bool IsDelayValid => int.TryParse(DelayMs, out var ms) && ms >= 0;
+    public bool IsPriorityValid => int.TryParse(Priority, out _);
     public bool IsValid =>
     !string.IsNullOrWhiteSpace(Trigger) &&
   !string.IsNullOrWhiteSpace(Name) &&
         ValidateHex(Trigger) &&
       ValidateHex(Hex) &&
-           IsDelayValid;
+           IsDelayValid &&
+           IsPriorityValid;
 
     public ResponseEditorViewModel() { }
 
@@ -60,6 +70,8 @@ public partial class ResponseEditorViewModel : ObservableObject
         // Use macro-based ASCII representation
         Ascii = CollapseToAscii(def.GetBytes());
         DelayMs = def.DelayMs.ToString();
+        Priority = def.Priority.ToString();
+        StopAfterMatch = def.StopAfterMatch;
     }
 
     // --- Commands ---
@@ -158,7 +170,12 @@ public partial class ResponseEditorViewModel : ObservableObject
     public MessageDefinition ToDefinition()
     {
         var delay = int.TryParse(DelayMs, out var ms) ? ms : 0;
-        return new MessageDefinition(Name, Hex, delay);
+        var priorityValue = int.TryParse(Priority, out var p) ? p : 0;
+        return new MessageDefinition(Name, Hex, delay)
+        {
+            Priority = priorityValue,
+            StopAfterMatch = StopAfterMatch
+        };
     }
 
     // --- static utils ---

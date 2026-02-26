@@ -25,6 +25,8 @@ namespace Quintilink.Models
         public string Content { get; set; } = string.Empty;
         public int DelayMs { get; set; } = 0;
         public bool IsPaused { get; set; }
+        public int Priority { get; set; }
+        public bool StopAfterMatch { get; set; }
 
         public MessageDto() { }
 
@@ -34,10 +36,17 @@ namespace Quintilink.Models
             Content = def.Content;
             DelayMs = def.DelayMs;
             IsPaused = def.IsPaused;
+            Priority = def.Priority;
+            StopAfterMatch = def.StopAfterMatch;
         }
 
         public MessageDefinition ToDefinition()
-            => new MessageDefinition(Name, Content, DelayMs) { IsPaused = IsPaused };
+            => new MessageDefinition(Name, Content, DelayMs)
+            {
+                IsPaused = IsPaused,
+                Priority = Priority,
+                StopAfterMatch = StopAfterMatch
+            };
     }
 
     /// <summary>
@@ -50,6 +59,8 @@ namespace Quintilink.Models
         public string Content { get; set; } = string.Empty;
         public int DelayMs { get; set; } = 0;
         public bool IsPaused { get; set; }
+        public int Priority { get; set; }
+        public bool StopAfterMatch { get; set; }
 
         public ReactionDto() { }
 
@@ -60,10 +71,17 @@ namespace Quintilink.Models
             Content = def.Content;
             DelayMs = def.DelayMs;
             IsPaused = def.IsPaused;
+            Priority = def.Priority;
+            StopAfterMatch = def.StopAfterMatch;
         }
 
         public (string Trigger, MessageDefinition Definition) ToReaction()
-            => (Trigger, new MessageDefinition(Name, Content, DelayMs) { IsPaused = IsPaused });
+            => (Trigger, new MessageDefinition(Name, Content, DelayMs)
+            {
+                IsPaused = IsPaused,
+                Priority = Priority,
+                StopAfterMatch = StopAfterMatch
+            });
     }
 
     /// <summary>
