@@ -16,6 +16,9 @@ namespace Quintilink.Models
         public int DataBits { get; set; } = 8;
         public int StopBits { get; set; } = 1; // One = 1
 
+        public List<string> QuickSendHistory { get; set; } = new();
+        public List<string> QuickSendPinnedSnippets { get; set; } = new();
+
         private static readonly string FilePath =
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");
 

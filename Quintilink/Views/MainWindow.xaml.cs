@@ -79,9 +79,9 @@ namespace Quintilink.Views
             if (index < 0 || index >= rtb.Document.Blocks.Count)
                 return;
 
-            if (vm.ToggleBookmarkAtIndexCommand.CanExecute(index))
+            if (vm.ToggleBookmarkAtVisibleIndexCommand.CanExecute(index))
             {
-                vm.ToggleBookmarkAtIndexCommand.Execute(index);
+                vm.ToggleBookmarkAtVisibleIndexCommand.Execute(index);
                 e.Handled = true;
             }
         }

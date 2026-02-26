@@ -5,6 +5,7 @@ using System.IO.Ports;
 using System.Text;
 using System.Windows;
 using System.Windows.Documents;
+using System.Text.RegularExpressions;
 using Quintilink.Models;
 using Quintilink.Helpers;
 using Quintilink.Services;
@@ -32,6 +33,7 @@ namespace Quintilink.ViewModels
         // Collection to store log entries for export
         private readonly List<LogEntry> _logEntries = new();
         private readonly object _logEntriesLock = new();
+        private readonly List<int> _visibleLogEntryIndices = new();
 
         // Connection statistics
         private readonly ConnectionStatistics _statistics = new();
@@ -50,6 +52,30 @@ namespace Quintilink.ViewModels
 
         [ObservableProperty]
         private string quickSendText = string.Empty;
+
+        [ObservableProperty]
+        private bool showRxLogs = true;
+
+        [ObservableProperty]
+        private bool showTxLogs = true;
+
+        [ObservableProperty]
+        private bool showSysLogs = true;
+
+        [ObservableProperty]
+        private bool showErrLogs = true;
+
+        [ObservableProperty]
+        private bool showBookmarkedOnly;
+
+        [ObservableProperty]
+        private bool useRegexLogFilter;
+
+        [ObservableProperty]
+        private string logFilterText = string.Empty;
+
+        public ObservableCollection<string> QuickSendHistory { get; } = new();
+        public ObservableCollection<string> QuickSendPinnedSnippets { get; } = new();
 
         partial void OnQuickSendTextChanged(string value)
         {
@@ -333,6 +359,14 @@ namespace Quintilink.ViewModels
             Host = _settings.Host;
             Port = _settings.Port;
 
+            QuickSendHistory.Clear();
+            foreach (var entry in _settings.QuickSendHistory)
+                QuickSendHistory.Add(entry);
+
+            QuickSendPinnedSnippets.Clear();
+            foreach (var snippet in _settings.QuickSendPinnedSnippets)
+                QuickSendPinnedSnippets.Add(snippet);
+
             // Load serial port settings
             RefreshSerialPorts();
             SelectedSerialPort = _settings.SerialPortName;
@@ -344,6 +378,14 @@ namespace Quintilink.ViewModels
             ConnectCommand.NotifyCanExecuteChanged();
             DisconnectCommand.NotifyCanExecuteChanged();
         }
+
+        partial void OnShowRxLogsChanged(bool value) => RebuildVisibleLogDocument();
+        partial void OnShowTxLogsChanged(bool value) => RebuildVisibleLogDocument();
+        partial void OnShowSysLogsChanged(bool value) => RebuildVisibleLogDocument();
+        partial void OnShowErrLogsChanged(bool value) => RebuildVisibleLogDocument();
+        partial void OnShowBookmarkedOnlyChanged(bool value) => RebuildVisibleLogDocument();
+        partial void OnUseRegexLogFilterChanged(bool value) => RebuildVisibleLogDocument();
+        partial void OnLogFilterTextChanged(string value) => RebuildVisibleLogDocument();
 
         [RelayCommand]
         private void RefreshSerialPorts()
@@ -677,6 +719,7 @@ namespace Quintilink.ViewModels
                 lock (_logEntriesLock)
                 {
                     _logEntries.Clear();
+                    _visibleLogEntryIndices.Clear();
                 }
             });
         }
@@ -870,30 +913,36 @@ namespace Quintilink.ViewModels
 
         private async Task CheckReaction(string hex)
         {
-            // Send ALL matching non-paused reactions (exact match first, then prefix)
-            bool exactMatched = false;
+            var exactMatches = _reactions
+                .Where(item => string.Equals(item.Trigger, hex, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(item => item.Response.Priority)
+                .ToList();
 
-            foreach (var item in _reactions)
+            if (exactMatches.Count > 0)
             {
-                if (string.Equals(item.Trigger, hex, StringComparison.OrdinalIgnoreCase))
-                {
-                    exactMatched = true;
-                    if (!item.Response.IsPaused)
-                        await SendReaction(item.Trigger, item.Response);
-                }
+                await ExecuteReactionMatches(exactMatches);
+                return;
             }
 
-            if (exactMatched)
-                return;
+            var prefixMatches = _reactions
+                .Where(item => hex.StartsWith(item.Trigger, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(item => item.Response.Priority)
+                .ToList();
 
-            // Prefix matches
-            foreach (var item in _reactions)
+            await ExecuteReactionMatches(prefixMatches);
+        }
+
+        private async Task ExecuteReactionMatches(List<ReactionItem> matches)
+        {
+            foreach (var item in matches)
             {
-                if (hex.StartsWith(item.Trigger, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (!item.Response.IsPaused)
-                        await SendReaction(item.Trigger, item.Response);
-                }
+                if (item.Response.IsPaused)
+                    continue;
+
+                await SendReaction(item.Trigger, item.Response);
+
+                if (item.Response.StopAfterMatch)
+                    break;
             }
         }
 
@@ -1041,8 +1090,7 @@ namespace Quintilink.ViewModels
                 _bookmarks.RemoveAll(b => b.LogEntryIndex == currentIndex);
             }
 
-            // Update the visual line in the FlowDocument to show/remove breakpoint dot
-            InvokeOnUiThread(() => ToggleBookmarkDotInDocument(currentIndex, entry.IsBookmarked));
+            RebuildVisibleLogDocument();
         }
 
         [RelayCommand]
@@ -1078,7 +1126,22 @@ namespace Quintilink.ViewModels
                 _bookmarks.RemoveAll(b => b.LogEntryIndex == logEntryIndex);
             }
 
-            InvokeOnUiThread(() => ToggleBookmarkDotInDocument(logEntryIndex, entry.IsBookmarked));
+            RebuildVisibleLogDocument();
+        }
+
+        [RelayCommand]
+        private void ToggleBookmarkAtVisibleIndex(int visibleIndex)
+        {
+            int logEntryIndex;
+            lock (_logEntriesLock)
+            {
+                if (visibleIndex < 0 || visibleIndex >= _visibleLogEntryIndices.Count)
+                    return;
+
+                logEntryIndex = _visibleLogEntryIndices[visibleIndex];
+            }
+
+            ToggleBookmarkAtIndex(logEntryIndex);
         }
 
         private void ToggleBookmarkDotInDocument(int logEntryIndex, bool isBookmarked)
@@ -1143,6 +1206,121 @@ namespace Quintilink.ViewModels
             }
         }
 
+        [RelayCommand]
+        private void ClearLogFilters()
+        {
+            ShowRxLogs = true;
+            ShowTxLogs = true;
+            ShowSysLogs = true;
+            ShowErrLogs = true;
+            ShowBookmarkedOnly = false;
+            UseRegexLogFilter = false;
+            LogFilterText = string.Empty;
+            RebuildVisibleLogDocument();
+        }
+
+        private void RebuildVisibleLogDocument()
+        {
+            InvokeOnUiThread(() =>
+            {
+                LogDocument.Blocks.Clear();
+
+                List<LogEntry> snapshot;
+                lock (_logEntriesLock)
+                {
+                    snapshot = new List<LogEntry>(_logEntries);
+                    _visibleLogEntryIndices.Clear();
+                }
+
+                for (var i = 0; i < snapshot.Count; i++)
+                {
+                    var entry = snapshot[i];
+                    if (!PassesLogFilters(entry))
+                        continue;
+
+                    bool isAsciiLine = entry.Message.StartsWith("[RX] ASCII:") || entry.Message.StartsWith("[TX] ASCII:");
+                    string prefix = "";
+                    string content = entry.Message;
+
+                    if (content.StartsWith("["))
+                    {
+                        int endBracket = content.IndexOf(']');
+                        if (endBracket > 0)
+                        {
+                            prefix = content.Substring(0, endBracket + 1) + " ";
+                            content = content.Substring(endBracket + 2);
+                        }
+                    }
+
+                    LogHelper.AppendLogEntry(LogDocument, entry.Timestamp.ToString("HH:mm:ss"), prefix, content, isAsciiLine, entry.IsBookmarked);
+
+                    lock (_logEntriesLock)
+                    {
+                        _visibleLogEntryIndices.Add(i);
+                    }
+                }
+            });
+        }
+
+        private bool PassesLogFilters(LogEntry entry)
+        {
+            bool directionVisible = entry.Direction switch
+            {
+                "RX" => ShowRxLogs,
+                "TX" => ShowTxLogs,
+                "SYS" => ShowSysLogs,
+                "ERR" => ShowErrLogs,
+                _ => true
+            };
+
+            if (!directionVisible)
+                return false;
+
+            if (ShowBookmarkedOnly && !entry.IsBookmarked)
+                return false;
+
+            if (string.IsNullOrWhiteSpace(LogFilterText))
+                return true;
+
+            if (UseRegexLogFilter)
+            {
+                try
+                {
+                    return Regex.IsMatch(entry.Message ?? string.Empty, LogFilterText, RegexOptions.IgnoreCase);
+                }
+                catch
+                {
+                    return true;
+                }
+            }
+
+            return (entry.Message ?? string.Empty).Contains(LogFilterText, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void AddQuickSendHistoryEntry(string text)
+        {
+            var value = text?.Trim();
+            if (string.IsNullOrWhiteSpace(value))
+                return;
+
+            var existingIndex = QuickSendHistory.IndexOf(value);
+            if (existingIndex >= 0)
+                QuickSendHistory.RemoveAt(existingIndex);
+
+            QuickSendHistory.Insert(0, value);
+            while (QuickSendHistory.Count > 25)
+                QuickSendHistory.RemoveAt(QuickSendHistory.Count - 1);
+
+            SaveQuickSendCollections();
+        }
+
+        private void SaveQuickSendCollections()
+        {
+            _settings.QuickSendHistory = QuickSendHistory.ToList();
+            _settings.QuickSendPinnedSnippets = QuickSendPinnedSnippets.ToList();
+            _settings.Save();
+        }
+
         private void StartStatisticsTimer()
         {
             _statisticsUpdateTimer = new System.Threading.Timer(_ =>
@@ -1192,6 +1370,8 @@ namespace Quintilink.ViewModels
                     AppendLog($"[TX] ASCII: {ascii}");
                     AppendLog($"[TX] HEX  : {hex} – {bytes.Length} bytes");
 
+                    AddQuickSendHistoryEntry(QuickSendText);
+
                     QuickSendText = string.Empty;
                 }
                 else
@@ -1207,6 +1387,46 @@ namespace Quintilink.ViewModels
         }
 
         private bool CanSendQuickMessage() => IsConnected && !string.IsNullOrWhiteSpace(QuickSendText);
+
+        [RelayCommand]
+        private void PinQuickSendSnippet()
+        {
+            var snippet = QuickSendText?.Trim();
+            if (string.IsNullOrWhiteSpace(snippet))
+                return;
+
+            if (!QuickSendPinnedSnippets.Contains(snippet))
+            {
+                QuickSendPinnedSnippets.Insert(0, snippet);
+                while (QuickSendPinnedSnippets.Count > 20)
+                    QuickSendPinnedSnippets.RemoveAt(QuickSendPinnedSnippets.Count - 1);
+                SaveQuickSendCollections();
+            }
+        }
+
+        [RelayCommand]
+        private void ApplyPinnedSnippet(string? snippet)
+        {
+            if (!string.IsNullOrWhiteSpace(snippet))
+                QuickSendText = snippet;
+        }
+
+        [RelayCommand]
+        private void RemovePinnedSnippet(string? snippet)
+        {
+            if (string.IsNullOrWhiteSpace(snippet))
+                return;
+
+            if (QuickSendPinnedSnippets.Remove(snippet))
+                SaveQuickSendCollections();
+        }
+
+        [RelayCommand]
+        private void ClearQuickSendHistory()
+        {
+            QuickSendHistory.Clear();
+            SaveQuickSendCollections();
+        }
 
         [RelayCommand]
         private void ShowStatistics()

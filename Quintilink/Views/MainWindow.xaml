@@ -36,6 +36,13 @@
             <Setter Property="Margin" Value="0,0,6,0"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
+
+        <Style x:Key="LogFilterCheckBoxStyle" TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+            <Setter Property="Margin" Value="0,0,10,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
     </ui:FluentWindow.Resources>
 
     <Grid>
@@ -315,7 +322,29 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
+                    <Grid Grid.Row="1" Margin="0,6,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <TextBox Width="160" Height="30" Margin="0,0,6,0" Text="{Binding LogFilterText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Filter log text" />
+                            <CheckBox Content="Regex" Style="{StaticResource LogFilterCheckBoxStyle}" Margin="0,0,14,0" IsChecked="{Binding UseRegexLogFilter}"/>
+                            <CheckBox Content="RX" Style="{StaticResource LogFilterCheckBoxStyle}" IsChecked="{Binding ShowRxLogs}"/>
+                            <CheckBox Content="TX" Style="{StaticResource LogFilterCheckBoxStyle}" IsChecked="{Binding ShowTxLogs}"/>
+                            <CheckBox Content="SYS" Style="{StaticResource LogFilterCheckBoxStyle}" IsChecked="{Binding ShowSysLogs}"/>
+                            <CheckBox Content="ERR" Style="{StaticResource LogFilterCheckBoxStyle}" IsChecked="{Binding ShowErrLogs}"/>
+                            <CheckBox Content="Bookmarked" Style="{StaticResource LogFilterCheckBoxStyle}" Margin="0" IsChecked="{Binding ShowBookmarkedOnly}"/>
+                        </StackPanel>
+
+                        <WrapPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0" ItemHeight="30">
+                            <ui:Button Command="{Binding ClearLogFiltersCommand}" ToolTip="Reset log filters" Style="{StaticResource HeaderIconButtonStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="FilterDismiss24" FontSize="14" Margin="0,0,4,0"/>
+                                <TextBlock Text="Reset" FontSize="11" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </ui:Button>
                         <ui:Button Command="{Binding SearchHexPatternCommand}" ToolTip="Search hex pattern in log" Style="{StaticResource HeaderIconButtonStyle}">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="Search16" FontSize="14" Margin="0,0,4,0"/>
@@ -334,13 +363,14 @@
                                 <TextBlock Text="Export" FontSize="11" FontWeight="SemiBold"/>
                             </StackPanel>
                         </ui:Button>
-                        <ui:Button Command="{Binding ClearLogCommand}" ToolTip="Clear log" Style="{StaticResource HeaderIconButtonStyle}" Margin="0">
+                            <ui:Button Command="{Binding ClearLogCommand}" ToolTip="Clear log" Style="{StaticResource HeaderIconButtonStyle}" Margin="0">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="Delete16" FontSize="14" Margin="0,0,4,0"/>
                                 <TextBlock Text="Clear" FontSize="11" FontWeight="SemiBold"/>
                             </StackPanel>
                         </ui:Button>
-                    </StackPanel>
+                        </WrapPanel>
+                    </Grid>
 
                     <RichTextBox x:Name="LogRichTextBox" Grid.Row="0"
                                  PreviewMouseMove="LogRichTextBox_PreviewMouseMove"
@@ -492,6 +522,7 @@
                                                     <RowDefinition Height="Auto"/>
                                                     <RowDefinition Height="Auto"/>
                                                     <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
                                                 </Grid.RowDefinitions>
 
                                                 <TextBlock Grid.Row="0" Text="{Binding Response.Name}" FontWeight="SemiBold" FontSize="13">
@@ -519,6 +550,13 @@
                                                 <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,2,0,0">
                                                     <TextBlock Text="HEX: " FontSize="11" Foreground="Gray"/>
                                                     <TextBlock Text="{Binding Response.DisplayHex}" FontSize="11" FontFamily="Consolas"/>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,2,0,0">
+                                                    <TextBlock Text="Priority: " FontSize="11" Foreground="Gray"/>
+                                                    <TextBlock Text="{Binding Response.Priority}" FontSize="11"/>
+                                                    <TextBlock Text="  •  Stop after match: " FontSize="11" Foreground="Gray" Margin="8,0,0,0"/>
+                                                    <TextBlock Text="{Binding Response.StopAfterMatch}" FontSize="11"/>
                                                 </StackPanel>
                                             </Grid>
                                         </Grid>
@@ -558,45 +596,68 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBox Grid.Column="0"
-                             Text="{Binding QuickSendText, UpdateSourceTrigger=PropertyChanged}"
-                             VerticalAlignment="Center"
-                             Height="35"
-                             FontSize="13"
-                             FontFamily="Consolas"
-                             Padding="10,8"
-                             Margin="0,0,10,0"
-                             ToolTip="Quick Send supports mixed input: ASCII text plus hex bytes in &lt;...&gt; (e.g., HELLO&lt;0D 0A&gt;). Macros: &lt;CR&gt; &lt;LF&gt; &lt;TAB&gt; &lt;NULL&gt;."
-                             x:Name="QuickSendTextBox">
-                        <TextBox.InputBindings>
+                    <ComboBox Grid.Column="0"
+                              IsEditable="True"
+                              StaysOpenOnEdit="True"
+                              ItemsSource="{Binding QuickSendHistory}"
+                              Text="{Binding QuickSendText, UpdateSourceTrigger=PropertyChanged}"
+                              VerticalAlignment="Center"
+                              Height="35"
+                              FontSize="13"
+                              FontFamily="Consolas"
+                              Padding="10,8"
+                              Margin="0,0,10,0"
+                              ToolTip="Quick Send supports mixed input: ASCII text plus hex bytes in &lt;...&gt; (e.g., HELLO&lt;0D 0A&gt;). Macros: &lt;CR&gt; &lt;LF&gt; &lt;TAB&gt; &lt;NULL&gt;."
+                              x:Name="QuickSendTextBox">
+                        <ComboBox.InputBindings>
                             <KeyBinding Key="Return" Command="{Binding SendQuickMessageCommand}"/>
-                        </TextBox.InputBindings>
-                        <TextBox.Style>
-                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                        </ComboBox.InputBindings>
+                        <ComboBox.Style>
+                            <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsConnected}" Value="False">
                                         <Setter Property="IsEnabled" Value="False"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </TextBox.Style>
-                    </TextBox>
+                        </ComboBox.Style>
+                    </ComboBox>
 
-                    <ui:Button Grid.Column="1"
-                               Command="{Binding SendQuickMessageCommand}"
-                               ToolTip="Send message (Enter). Plain text sends as ASCII; embed hex bytes as &lt;0D 0A&gt;"
-                               Height="35"
-                               MinWidth="100"
-                               Padding="15,8">
-                        <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="Send24" FontSize="16" Margin="0,0,8,0"/>
-                            <TextBlock Text="Send" FontSize="13" FontWeight="SemiBold"/>
-                        </StackPanel>
-                    </ui:Button>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <ui:Button Command="{Binding PinQuickSendSnippetCommand}" ToolTip="Pin current quick-send text" Height="35" Margin="0,0,8,0" Padding="10,8">
+                            <ui:SymbolIcon Symbol="Pin16" FontSize="16"/>
+                        </ui:Button>
+                        <ui:Button Command="{Binding SendQuickMessageCommand}"
+                                   ToolTip="Send message (Enter). Plain text sends as ASCII; embed hex bytes as &lt;0D 0A&gt;"
+                                   Height="35"
+                                   MinWidth="100"
+                                   Padding="15,8">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Send24" FontSize="16" Margin="0,0,8,0"/>
+                                <TextBlock Text="Send" FontSize="13" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </ui:Button>
+                    </StackPanel>
                 </Grid>
 
-                <TextBlock Grid.Row="1" Margin="2,6,0,0" FontSize="11" Foreground="Gray"
-                           Text="Quick Send: ASCII text, hex bytes in &lt;...&gt; (e.g., HELLO&lt;0D 0A&gt;), macros: &lt;CR&gt; &lt;LF&gt;" />
+                <Grid Grid.Row="1" Margin="0,6,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Margin="2,0,0,0" FontSize="11" Foreground="Gray"
+                               VerticalAlignment="Center"
+                               Text="Quick Send: ASCII text, hex bytes in &lt;...&gt; (e.g., HELLO&lt;0D 0A&gt;), macros: &lt;CR&gt; &lt;LF&gt;" />
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Pinned:" Foreground="Gray" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox Width="220" Height="30" ItemsSource="{Binding QuickSendPinnedSnippets}" SelectedItem="{Binding QuickSendText, Mode=TwoWay}" ToolTip="Pinned snippets"/>
+                        <ui:Button Command="{Binding ClearQuickSendHistoryCommand}" ToolTip="Clear quick-send history" Margin="6,0,0,0" Padding="6,4" Height="30">
+                            <ui:SymbolIcon Symbol="Delete16" FontSize="14"/>
+                        </ui:Button>
+                    </StackPanel>
+                </Grid>
             </Grid>
         </ui:Card>
 
