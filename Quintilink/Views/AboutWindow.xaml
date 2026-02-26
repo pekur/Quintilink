@@ -7,7 +7,7 @@
         xmlns:vm="clr-namespace:Quintilink.ViewModels"
         mc:Ignorable="d"
         Title="About Quintilink" 
-        Height="420" 
+        Height="650" 
         Width="450"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
