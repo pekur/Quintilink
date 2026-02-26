@@ -19,6 +19,13 @@ namespace Quintilink.Models
         public List<string> QuickSendHistory { get; set; } = new();
         public List<string> QuickSendPinnedSnippets { get; set; } = new();
 
+        // Main window placement
+        public double? MainWindowLeft { get; set; }
+        public double? MainWindowTop { get; set; }
+        public double? MainWindowWidth { get; set; }
+        public double? MainWindowHeight { get; set; }
+        public bool MainWindowMaximized { get; set; }
+
         private static readonly string FilePath =
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");
 
