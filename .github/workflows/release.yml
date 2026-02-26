@@ -38,6 +38,7 @@ jobs:
       - name: Publish
         run: |
           dotnet publish `
+            Quintilink/Quintilink.csproj `
             -c Release `
             -r win-x64 `
             --self-contained true `
