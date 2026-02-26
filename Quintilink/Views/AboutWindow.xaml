@@ -22,7 +22,7 @@
         </Grid.RowDefinitions>
 
         <!-- Title Bar -->
-        <ui:TitleBar Grid.Row="0" Title="About Quintilink" Icon="Info16" />
+        <ui:TitleBar Grid.Row="0" Title="About Quintilink" Icon="Send24" />
 
         <!-- Content -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
