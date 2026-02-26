@@ -1,9 +1,8 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Windows;
-using System.Xml.Linq;
 using Quintilink.Models;
 
 namespace Quintilink.ViewModels;
@@ -15,9 +14,12 @@ public partial class ResponseEditorViewModel : ObservableObject
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     [NotifyPropertyChangedFor(nameof(IsValid))]
+    [NotifyPropertyChangedFor(nameof(IsTriggerValid))]
+    [NotifyPropertyChangedFor(nameof(TriggerByteCount))]
     private string trigger = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AsciiPreview))]
     private string triggerAscii = string.Empty;
 
     [ObservableProperty]
@@ -28,29 +30,48 @@ public partial class ResponseEditorViewModel : ObservableObject
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     [NotifyPropertyChangedFor(nameof(IsValid))]
+    [NotifyPropertyChangedFor(nameof(PayloadByteCount))]
+    [NotifyPropertyChangedFor(nameof(AsciiPreview))]
     private string hex = string.Empty;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     [NotifyPropertyChangedFor(nameof(IsValid))]
+    [NotifyPropertyChangedFor(nameof(IsDelayValid))]
     private string delayMs = "0";
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     [NotifyPropertyChangedFor(nameof(IsValid))]
+    [NotifyPropertyChangedFor(nameof(IsPriorityValid))]
     private string priority = "0";
 
     [ObservableProperty]
     private bool stopAfterMatch;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AsciiPreview))]
     private string ascii = string.Empty;
 
     [ObservableProperty]
     private bool isHexValid = true;
 
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(InsertAsciiMacroToPayloadCommand))]
+    [NotifyCanExecuteChangedFor(nameof(InsertAsciiMacroToTriggerCommand))]
+    private string selectedAsciiMacro = "<CR>";
+
+    public ObservableCollection<string> AsciiMacroOptions { get; } = new()
+    {
+        "<CR>", "<LF>", "<TAB>", "<NUL>", "<ESC>", "<ACK>", "<NAK>", "<STX>", "<ETX>"
+    };
+
     public bool IsDelayValid => int.TryParse(DelayMs, out var ms) && ms >= 0;
     public bool IsPriorityValid => int.TryParse(Priority, out _);
+    public bool IsTriggerValid => ValidateHex(Trigger);
+    public int PayloadByteCount => FromHex(Hex).Length;
+    public int TriggerByteCount => FromHex(Trigger).Length;
+    public string AsciiPreview => string.IsNullOrWhiteSpace(Ascii) ? "(empty)" : Ascii;
     public bool IsValid =>
     !string.IsNullOrWhiteSpace(Trigger) &&
   !string.IsNullOrWhiteSpace(Name) &&
@@ -87,7 +108,23 @@ public partial class ResponseEditorViewModel : ObservableObject
         RequestClose?.Invoke(false);
     }
 
+    [RelayCommand(CanExecute = nameof(CanInsertAsciiMacro))]
+    private void InsertAsciiMacroToPayload()
+    {
+        if (!string.IsNullOrWhiteSpace(SelectedAsciiMacro))
+            Ascii += SelectedAsciiMacro;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanInsertAsciiMacro))]
+    private void InsertAsciiMacroToTrigger()
+    {
+        if (!string.IsNullOrWhiteSpace(SelectedAsciiMacro))
+            TriggerAscii += SelectedAsciiMacro;
+    }
+
     public event Action<bool>? RequestClose;
+
+    private bool CanInsertAsciiMacro() => !string.IsNullOrWhiteSpace(SelectedAsciiMacro);
 
     // --- Conversion helpers ---
     partial void OnHexChanged(string value)
@@ -110,6 +147,9 @@ public partial class ResponseEditorViewModel : ObservableObject
             }
         }
         finally { _isUpdating = false; }
+
+        OnPropertyChanged(nameof(PayloadByteCount));
+        OnPropertyChanged(nameof(AsciiPreview));
     }
 
     partial void OnAsciiChanged(string value)
@@ -123,6 +163,8 @@ public partial class ResponseEditorViewModel : ObservableObject
             IsHexValid = true;
         }
         finally { _isUpdating = false; }
+
+        OnPropertyChanged(nameof(AsciiPreview));
     }
 
     partial void OnTriggerChanged(string value)
@@ -146,6 +188,9 @@ public partial class ResponseEditorViewModel : ObservableObject
             }
         }
         finally { _isUpdating = false; }
+
+        OnPropertyChanged(nameof(IsTriggerValid));
+        OnPropertyChanged(nameof(TriggerByteCount));
     }
 
     partial void OnTriggerAsciiChanged(string value)
@@ -158,6 +203,8 @@ public partial class ResponseEditorViewModel : ObservableObject
             Trigger = MessageDefinition.ToSpacedHex(bytes);
         }
         finally { _isUpdating = false; }
+
+        OnPropertyChanged(nameof(TriggerByteCount));
     }
 
     public void NormalizeHexField()

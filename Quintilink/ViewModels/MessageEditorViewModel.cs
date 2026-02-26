@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
 using System.Text;
 using System.Text.RegularExpressions;
 using Quintilink.Models;
@@ -14,9 +15,12 @@ namespace Quintilink.ViewModels
         private string name = string.Empty;
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(AsciiPreview))]
         private string ascii = string.Empty;
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(PayloadByteCount))]
+        [NotifyPropertyChangedFor(nameof(AsciiPreview))]
         private string hex = string.Empty;
 
         [ObservableProperty]
@@ -24,8 +28,19 @@ namespace Quintilink.ViewModels
         [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
         private bool isHexValid = true;
 
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(InsertAsciiMacroCommand))]
+        private string selectedAsciiMacro = "<CR>";
+
         private bool _isUpdating;
         public bool IsValid => !string.IsNullOrWhiteSpace(Name) && IsHexValid;
+        public int PayloadByteCount => FromHex(Hex).Length;
+        public string AsciiPreview => string.IsNullOrWhiteSpace(Ascii) ? "(empty)" : Ascii;
+
+        public ObservableCollection<string> AsciiMacroOptions { get; } = new()
+        {
+            "<CR>", "<LF>", "<TAB>", "<NUL>", "<ESC>", "<ACK>", "<NAK>", "<STX>", "<ETX>"
+        };
 
         // Raised when the editor wants to close
         public event Action<bool>? RequestClose;
@@ -50,6 +65,8 @@ namespace Quintilink.ViewModels
                 Hex = ToHex(bytes); // user-friendly grouping with spaces
             }
             finally { _isUpdating = false; }
+
+            OnPropertyChanged(nameof(AsciiPreview));
         }
 
         partial void OnHexChanged(string value)
@@ -72,6 +89,9 @@ namespace Quintilink.ViewModels
                 }
             }
             finally { _isUpdating = false; }
+
+            OnPropertyChanged(nameof(PayloadByteCount));
+            OnPropertyChanged(nameof(AsciiPreview));
         }
 
         public void NormalizeHexField()
@@ -202,5 +222,14 @@ namespace Quintilink.ViewModels
         {
             RequestClose?.Invoke(false); // signal dialog close with Cancel
         }
+
+        [RelayCommand(CanExecute = nameof(CanInsertAsciiMacro))]
+        private void InsertAsciiMacro()
+        {
+            if (!string.IsNullOrWhiteSpace(SelectedAsciiMacro))
+                Ascii += SelectedAsciiMacro;
+        }
+
+        private bool CanInsertAsciiMacro() => !string.IsNullOrWhiteSpace(SelectedAsciiMacro);
     }
 }

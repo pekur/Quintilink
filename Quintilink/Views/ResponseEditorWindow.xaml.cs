@@ -43,5 +43,21 @@ namespace Quintilink.Views
                 e.Handled = false;
             }
         }
+
+        private void NumericBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (!Regex.IsMatch(e.Text, "^[0-9]+$"))
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void NumericBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Space)
+            {
+                e.Handled = true;
+            }
+        }
     }
 }
