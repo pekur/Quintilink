@@ -8,8 +8,12 @@ namespace Quintilink.Models
         public long BytesSent { get; set; }
         public int MessagesReceived { get; set; }
         public int MessagesSent { get; set; }
+        public int ErrorCount { get; set; }
         public DateTime? ConnectionStartTime { get; set; }
         public DateTime? ConnectionEndTime { get; set; }
+
+        public double PeakBytesPerSecondReceived { get; private set; }
+        public double PeakBytesPerSecondSent { get; private set; }
 
         public TimeSpan ConnectionDuration
         {
@@ -66,8 +70,11 @@ namespace Quintilink.Models
             BytesSent = 0;
             MessagesReceived = 0;
             MessagesSent = 0;
+            ErrorCount = 0;
             ConnectionStartTime = null;
             ConnectionEndTime = null;
+            PeakBytesPerSecondReceived = 0;
+            PeakBytesPerSecondSent = 0;
         }
 
         public void StartConnection()
@@ -85,12 +92,28 @@ namespace Quintilink.Models
         {
             BytesReceived += byteCount;
             MessagesReceived++;
+            UpdatePeaks();
         }
 
         public void RecordSent(int byteCount)
         {
             BytesSent += byteCount;
             MessagesSent++;
+            UpdatePeaks();
+        }
+
+        public void RecordError()
+        {
+            ErrorCount++;
+        }
+
+        private void UpdatePeaks()
+        {
+            if (BytesPerSecondReceived > PeakBytesPerSecondReceived)
+                PeakBytesPerSecondReceived = BytesPerSecondReceived;
+
+            if (BytesPerSecondSent > PeakBytesPerSecondSent)
+                PeakBytesPerSecondSent = BytesPerSecondSent;
         }
     }
 }
