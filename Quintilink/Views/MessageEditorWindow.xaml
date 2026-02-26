@@ -10,20 +10,25 @@
         <KeyBinding Modifiers="Control" Key="Enter" Command="{Binding SaveCommand}"/>
     </ui:FluentWindow.InputBindings>
 
-    <ui:Card VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
-        <Grid Margin="12">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="150" />
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ui:Card Grid.Row="0" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch" Margin="0,0,0,1">
+            <Grid Margin="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="150" />
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
             <TextBlock Text="Name:" Grid.Column="0" Grid.Row="0" VerticalAlignment="Center"/>
             <TextBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,8"
@@ -87,14 +92,17 @@
                 </Grid>
             </Border>
 
-            <!-- Buttons -->
-            <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-                <Button Content="OK" IsDefault="True" Margin="5"
-                            Command="{Binding SaveCommand}"
-                            IsEnabled="{Binding IsValid}" />
-                <Button Content="Cancel" IsCancel="True" Margin="5"
-                            Command="{Binding CancelCommand}" />
+            </Grid>
+        </ui:Card>
+
+        <Border Grid.Row="1" BorderThickness="0,1,0,0" BorderBrush="#E0E0E0" Background="White" Padding="15,10">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="OK" IsDefault="True" MinWidth="80" Padding="10,6" Margin="0,0,10,0"
+                        Command="{Binding SaveCommand}"
+                        IsEnabled="{Binding IsValid}" />
+                <Button Content="Cancel" IsCancel="True" MinWidth="80" Padding="10,6"
+                        Command="{Binding CancelCommand}" />
             </StackPanel>
-        </Grid>
-    </ui:Card>
+        </Border>
+    </Grid>
 </ui:FluentWindow>
