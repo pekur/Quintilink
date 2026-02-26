@@ -18,10 +18,10 @@ namespace Quintilink.Models
             Disconnected?.Invoke(remote);
         }
 
-        public async Task ConnectAsync(string host, int port)
+        public async Task ConnectAsync(string host, int port, CancellationToken cancellationToken = default)
         {
             _client = new TcpClient();
-            await _client.ConnectAsync(host, port);
+            await _client.ConnectAsync(host, port, cancellationToken);
             _cts = new CancellationTokenSource();
             _isDisconnected = false;
 

@@ -29,6 +29,8 @@ namespace Quintilink.ViewModels
         private readonly IDialogService? _dialogService;
         private readonly IDispatcherService? _dispatcherService;
         private readonly ILogExportService _logExportService;
+        private CancellationTokenSource? _connectAttemptCts;
+        private bool _isConnectOperationInProgress;
 
         // Collection to store log entries for export
         private readonly List<LogEntry> _logEntries = new();
@@ -157,9 +159,20 @@ namespace Quintilink.ViewModels
         [ObservableProperty]
         private bool isConnected;
 
+        [ObservableProperty]
+        private bool isConnecting;
+
+        public string ConnectButtonText => IsConnecting ? "Cancel" : "Connect";
+
         partial void OnIsConnectedChanged(bool value)
         {
             SendQuickMessageCommand?.NotifyCanExecuteChanged();
+        }
+
+        partial void OnIsConnectingChanged(bool value)
+        {
+            OnPropertyChanged(nameof(ConnectButtonText));
+            ConnectCommand.NotifyCanExecuteChanged();
         }
 
         // Serial Port Properties
@@ -328,7 +341,7 @@ namespace Quintilink.ViewModels
         DisconnectCommand.NotifyCanExecuteChanged();
         UpdateServerStatus();
     });
-        };
+            };
 
             _serialPort.ModemLinesChanged += () =>
             {
@@ -501,9 +514,18 @@ namespace Quintilink.ViewModels
             MessageStore.Save(storage);
         }
 
-        [RelayCommand(CanExecute = nameof(CanConnect))]
+        [RelayCommand(CanExecute = nameof(CanConnect), AllowConcurrentExecutions = true)]
         private async Task ConnectAsync()
         {
+            if (_isConnectOperationInProgress)
+            {
+                _connectAttemptCts?.Cancel();
+                return;
+            }
+
+            _isConnectOperationInProgress = true;
+            ConnectCommand.NotifyCanExecuteChanged();
+
             try
             {
                 // Start statistics tracking
@@ -542,10 +564,23 @@ namespace Quintilink.ViewModels
                 }
                 else
                 {
-                    await _client.ConnectAsync(Host, Port);
+                    _connectAttemptCts = new CancellationTokenSource();
+                    var showCancelTask = ShowCancelAfterDelayAsync(_connectAttemptCts.Token);
+
+                    await _client.ConnectAsync(Host, Port, _connectAttemptCts.Token);
+                    _connectAttemptCts.Cancel();
+                    await showCancelTask;
+
                     AppendLog($"[SYS] Connected to {Host}:{Port}");
                     IsConnected = true;
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                AppendLog("[SYS] Connection canceled");
+                IsConnected = false;
+                _statistics.EndConnection();
+                StopStatisticsTimer();
             }
             catch (Exception ex)
             {
@@ -553,6 +588,13 @@ namespace Quintilink.ViewModels
                 IsConnected = false;
                 _statistics.EndConnection();
                 StopStatisticsTimer();
+            }
+            finally
+            {
+                _connectAttemptCts?.Dispose();
+                _connectAttemptCts = null;
+                _isConnectOperationInProgress = false;
+                IsConnecting = false;
             }
 
             ConnectCommand.NotifyCanExecuteChanged();
@@ -584,17 +626,32 @@ namespace Quintilink.ViewModels
             }
 
             IsConnected = false;
-            
+
             // End statistics tracking
             _statistics.EndConnection();
             StopStatisticsTimer();
-            
+
             ConnectCommand.NotifyCanExecuteChanged();
             DisconnectCommand.NotifyCanExecuteChanged();
             UpdateServerStatus();
         }
 
-        private bool CanConnect() => !IsConnected && (!IsSerialMode || !string.IsNullOrEmpty(SelectedSerialPort));
+        private async Task ShowCancelAfterDelayAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                IsConnecting = true;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        private bool CanConnect() =>
+            !IsConnected
+            && (!_isConnectOperationInProgress || _connectAttemptCts is not null)
+            && (!IsSerialMode || !string.IsNullOrEmpty(SelectedSerialPort));
         private bool CanDisconnect() => IsConnected;
 
         [RelayCommand]
@@ -714,7 +771,7 @@ namespace Quintilink.ViewModels
             InvokeOnUiThread(() =>
             {
                 LogDocument.Blocks.Clear();
-                
+
                 // Also clear stored log entries
                 lock (_logEntriesLock)
                 {

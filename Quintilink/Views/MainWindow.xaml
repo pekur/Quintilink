@@ -258,7 +258,7 @@
                     <ui:Button Command="{Binding ConnectCommand}" ToolTip="Connect" Style="{StaticResource HeaderPrimaryButtonStyle}">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="PlugConnected24" FontSize="16" Margin="0,0,6,0"/>
-                            <TextBlock Text="Connect" FontSize="11" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding ConnectButtonText}" FontSize="11" FontWeight="SemiBold"/>
                         </StackPanel>
                     </ui:Button>
 
