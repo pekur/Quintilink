@@ -84,6 +84,15 @@
                                 </Hyperlink>
                             </TextBlock>
                         </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                            <ui:SymbolIcon Symbol="Document16" FontSize="14" Margin="0,0,8,0"/>
+                            <TextBlock FontSize="12">
+                                <Hyperlink NavigateUri="https://github.com/pekur/Quintilink/blob/master/THIRD-PARTY-NOTICES.md" RequestNavigate="Hyperlink_RequestNavigate">
+                                    <Run Text="Third-Party Notices"/>
+                                </Hyperlink>
+                            </TextBlock>
+                        </StackPanel>
                     </StackPanel>
                 </ui:Card>
 

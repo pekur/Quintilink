@@ -147,6 +147,8 @@ For commercial licensing inquiries, please [open an issue](https://github.com/pe
 
 See the [LICENSE](LICENSE) file for full details.
 
+Third-party package notices are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
 ## Acknowledgments
 
 - Built with [WPF UI](https://github.com/lepoco/wpfui) for modern Windows 11 styling
