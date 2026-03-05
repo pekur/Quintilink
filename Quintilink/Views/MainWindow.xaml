@@ -664,7 +664,7 @@
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="Pinned:" Foreground="Gray" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <ComboBox Width="220" Height="30" ItemsSource="{Binding QuickSendPinnedSnippets}" SelectedItem="{Binding QuickSendText, Mode=TwoWay}" ToolTip="Pinned snippets"/>
+                        <ComboBox Width="220" Height="35" ItemsSource="{Binding QuickSendPinnedSnippets}" SelectedItem="{Binding QuickSendText, Mode=TwoWay}" ToolTip="Pinned snippets" FontSize="13" FontFamily="Consolas" Padding="10,8" Margin="0,0,10,0"/>
                         <ui:Button Command="{Binding ClearQuickSendHistoryCommand}" ToolTip="Clear quick-send history" Margin="6,0,0,0" Padding="6,4" Height="30">
                             <ui:SymbolIcon Symbol="Delete16" FontSize="14"/>
                         </ui:Button>
