@@ -23,7 +23,6 @@ namespace Quintilink.Views
     public partial class MainWindow : FluentWindow
     {
         private const double BookmarkGutterWidth = 18;
-        private AppSettings? _windowSettings;
 
         public MainWindow()
         {
@@ -33,14 +32,18 @@ namespace Quintilink.Views
             Closing += MainWindow_Closing;
         }
 
+        private AppSettings? GetSettings() => (DataContext as MainViewModel)?.Settings;
+
         private void MainWindow_SourceInitialized(object? sender, EventArgs e)
         {
-            _windowSettings = AppSettings.Load();
+            var settings = GetSettings();
+            if (settings is null)
+                return;
 
-            if (_windowSettings.MainWindowWidth is not double width
-                || _windowSettings.MainWindowHeight is not double height
-                || _windowSettings.MainWindowLeft is not double left
-                || _windowSettings.MainWindowTop is not double top
+            if (settings.MainWindowWidth is not double width
+                || settings.MainWindowHeight is not double height
+                || settings.MainWindowLeft is not double left
+                || settings.MainWindowTop is not double top
                 || width <= 0
                 || height <= 0)
             {
@@ -63,25 +66,27 @@ namespace Quintilink.Views
             Width = width;
             Height = height;
 
-            if (_windowSettings.MainWindowMaximized)
+            if (settings.MainWindowMaximized)
                 WindowState = WindowState.Maximized;
         }
 
         private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
-            _windowSettings ??= AppSettings.Load();
+            var settings = GetSettings();
+            if (settings is null)
+                return;
 
             var bounds = RestoreBounds;
             if (bounds.Width > 0 && bounds.Height > 0)
             {
-                _windowSettings.MainWindowLeft = bounds.Left;
-                _windowSettings.MainWindowTop = bounds.Top;
-                _windowSettings.MainWindowWidth = bounds.Width;
-                _windowSettings.MainWindowHeight = bounds.Height;
+                settings.MainWindowLeft = bounds.Left;
+                settings.MainWindowTop = bounds.Top;
+                settings.MainWindowWidth = bounds.Width;
+                settings.MainWindowHeight = bounds.Height;
             }
 
-            _windowSettings.MainWindowMaximized = WindowState == WindowState.Maximized;
-            _windowSettings.Save();
+            settings.MainWindowMaximized = WindowState == WindowState.Maximized;
+            settings.Save();
         }
 
         private void LogRichTextBox_PreviewMouseMove(object sender, MouseEventArgs e)

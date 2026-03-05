@@ -26,6 +26,7 @@ namespace Quintilink.ViewModels
         private readonly TcpServerWrapper _server = new();
         private readonly SerialPortWrapper _serialPort = new();
         private readonly AppSettings _settings;
+        public AppSettings Settings => _settings;
         private readonly IDialogService? _dialogService;
         private readonly IDispatcherService? _dispatcherService;
         private readonly ILogExportService _logExportService;
