@@ -4,10 +4,11 @@ using System.Collections.ObjectModel;
 using System.Text;
 using System.Text.RegularExpressions;
 using Quintilink.Models;
+using Quintilink.Services;
 
 namespace Quintilink.ViewModels
 {
-    public partial class MessageEditorViewModel : ObservableObject
+    public partial class MessageEditorViewModel : ObservableObject, IDialogRequestClose
     {
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsValid))]
@@ -47,12 +48,16 @@ namespace Quintilink.ViewModels
 
         public MessageEditorViewModel() { }
 
-        public MessageEditorViewModel(MessageDefinition def)
+        public void Load(MessageDefinition def)
         {
             Name = def.Name;
             Hex = MessageDefinition.ToSpacedHex(def.GetBytes());
-            // Use macro-based ASCII representation
             Ascii = CollapseToAscii(def.GetBytes());
+        }
+
+        public MessageEditorViewModel(MessageDefinition def)
+        {
+            Load(def);
         }
 
         partial void OnAsciiChanged(string value)

@@ -9,7 +9,6 @@ using System.Text.RegularExpressions;
 using Quintilink.Models;
 using Quintilink.Helpers;
 using Quintilink.Services;
-using Quintilink.Views;
 
 namespace Quintilink.ViewModels
 {
@@ -22,14 +21,18 @@ namespace Quintilink.ViewModels
 
     public partial class MainViewModel : ObservableObject
     {
-        private readonly TcpClientWrapper _client = new();
-        private readonly TcpServerWrapper _server = new();
-        private readonly SerialPortWrapper _serialPort = new();
+        private readonly ITcpClientConnection _client;
+        private readonly ITcpServerConnection _server;
+        private readonly ISerialPortConnection _serialPort;
+        private readonly IAppSettingsService _settingsService;
+        private readonly IMessageStoreService _messageStoreService;
+        private readonly IToolWindowService? _toolWindowService;
         private readonly AppSettings _settings;
         public AppSettings Settings => _settings;
         private readonly IDialogService? _dialogService;
         private readonly IDispatcherService? _dispatcherService;
         private readonly ILogExportService _logExportService;
+        private readonly ConnectionStatistics _statistics;
         private CancellationTokenSource? _connectAttemptCts;
         private bool _isConnectOperationInProgress;
 
@@ -39,17 +42,12 @@ namespace Quintilink.ViewModels
         private readonly List<int> _visibleLogEntryIndices = new();
 
         // Connection statistics
-        private readonly ConnectionStatistics _statistics = new();
         private System.Threading.Timer? _statisticsUpdateTimer;
 
         // Hex viewer features
         private readonly List<LogBookmark> _bookmarks = new();
         private readonly List<ByteHighlightRange> _highlightRanges = new();
         private HexSearchFilter _currentSearchFilter = new();
-
-        // Statistics window tracking
-        private Views.StatisticsWindow? _statisticsWindow;
-        private System.Threading.Timer? _statisticsWindowUpdateTimer;
 
         public IAsyncRelayCommand SendQuickMessageCommand { get; }
 
@@ -98,7 +96,7 @@ namespace Quintilink.ViewModels
         partial void OnHostChanged(string value)
         {
             _settings.Host = value;
-            _settings.Save();
+            _settingsService.Save();
         }
 
         [ObservableProperty]
@@ -107,7 +105,7 @@ namespace Quintilink.ViewModels
         partial void OnPortChanged(int value)
         {
             _settings.Port = value;
-            _settings.Save();
+            _settingsService.Save();
         }
 
         [ObservableProperty]
@@ -183,7 +181,7 @@ namespace Quintilink.ViewModels
         partial void OnSelectedSerialPortChanged(string value)
         {
             _settings.SerialPortName = value;
-            _settings.Save();
+            _settingsService.Save();
         }
 
         [ObservableProperty]
@@ -192,7 +190,7 @@ namespace Quintilink.ViewModels
         partial void OnSelectedBaudRateChanged(int value)
         {
             _settings.BaudRate = value;
-            _settings.Save();
+            _settingsService.Save();
         }
 
         [ObservableProperty]
@@ -201,7 +199,7 @@ namespace Quintilink.ViewModels
         partial void OnSelectedParityChanged(Parity value)
         {
             _settings.Parity = (int)value;
-            _settings.Save();
+            _settingsService.Save();
         }
 
         [ObservableProperty]
@@ -210,7 +208,7 @@ namespace Quintilink.ViewModels
         partial void OnSelectedDataBitsChanged(int value)
         {
             _settings.DataBits = value;
-            _settings.Save();
+            _settingsService.Save();
         }
 
         [ObservableProperty]
@@ -219,7 +217,7 @@ namespace Quintilink.ViewModels
         partial void OnSelectedStopBitsChanged(StopBits value)
         {
             _settings.StopBits = (int)value;
-            _settings.Save();
+            _settingsService.Save();
         }
 
         // Modem line status properties
@@ -270,16 +268,43 @@ namespace Quintilink.ViewModels
         public string title = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name ?? string.Empty;
 
         // Parameterless constructor for XAML designer support
-        public MainViewModel() : this(null, null)
+        public MainViewModel() : this(
+            null,
+            null,
+            new LogExportService(),
+            new AppSettingsService(),
+            new MessageStoreService(),
+            new TcpClientWrapper(),
+            new TcpServerWrapper(),
+            new SerialPortWrapper(),
+            new ConnectionStatistics(),
+            null)
         {
         }
 
         // Constructor with dependency injection
-        public MainViewModel(IDialogService? dialogService, IDispatcherService? dispatcherService)
+        public MainViewModel(
+            IDialogService? dialogService,
+            IDispatcherService? dispatcherService,
+            ILogExportService logExportService,
+            IAppSettingsService settingsService,
+            IMessageStoreService messageStoreService,
+            ITcpClientConnection client,
+            ITcpServerConnection server,
+            ISerialPortConnection serialPort,
+            ConnectionStatistics statistics,
+            IToolWindowService? toolWindowService)
         {
             _dialogService = dialogService;
             _dispatcherService = dispatcherService;
-            _logExportService = new LogExportService();
+            _logExportService = logExportService;
+            _settingsService = settingsService;
+            _messageStoreService = messageStoreService;
+            _client = client;
+            _server = server;
+            _serialPort = serialPort;
+            _statistics = statistics;
+            _toolWindowService = toolWindowService;
 
             SendQuickMessageCommand = new AsyncRelayCommand(SendQuickMessage, CanSendQuickMessage);
 
@@ -302,7 +327,6 @@ namespace Quintilink.ViewModels
 
             _server.DataReceived += async (endpoint, data) =>
             {
-                // Track statistics
                 _statistics.RecordReceived(data.Length);
 
                 string hex = BitConverter.ToString(data).Replace("-", " ");
@@ -315,11 +339,11 @@ namespace Quintilink.ViewModels
             };
 
             _server.ClientConnected += endpoint =>
-                    {
-                        _connectedClients.Add(endpoint);
-                        AppendLog($"[SYS] Client connected: {endpoint}");
-                        UpdateServerStatus();
-                    };
+            {
+                _connectedClients.Add(endpoint);
+                AppendLog($"[SYS] Client connected: {endpoint}");
+                UpdateServerStatus();
+            };
 
             _server.ClientDisconnected += endpoint =>
             {
@@ -332,28 +356,25 @@ namespace Quintilink.ViewModels
             _serialPort.Disconnected += remote =>
             {
                 InvokeOnUiThread(() =>
-    {
-        AppendLog(remote
-        ? "[SYS] Serial port disconnected (error)"
-            : "[SYS] Serial port disconnected");
+                {
+                    AppendLog(remote
+                        ? "[SYS] Serial port disconnected (error)"
+                        : "[SYS] Serial port disconnected");
 
-        IsConnected = false;
-        ConnectCommand.NotifyCanExecuteChanged();
-        DisconnectCommand.NotifyCanExecuteChanged();
-        UpdateServerStatus();
-    });
+                    IsConnected = false;
+                    ConnectCommand.NotifyCanExecuteChanged();
+                    DisconnectCommand.NotifyCanExecuteChanged();
+                    UpdateServerStatus();
+                });
             };
 
             _serialPort.ModemLinesChanged += () =>
             {
-                InvokeOnUiThread(() =>
-         {
-             UpdateModemLineStatus();
-         });
+                InvokeOnUiThread(UpdateModemLineStatus);
             };
 
             // Load messages and reactions
-            var loaded = MessageStore.Load();
+            var loaded = _messageStoreService.Load();
 
             PredefinedMessages.Clear();
             foreach (var dto in loaded.PredefinedMessages)
@@ -369,7 +390,7 @@ namespace Quintilink.ViewModels
             RefreshReactions();
 
             // load settings
-            _settings = AppSettings.Load();
+            _settings = _settingsService.Current;
             Host = _settings.Host;
             Port = _settings.Port;
 
@@ -408,14 +429,13 @@ namespace Quintilink.ViewModels
 
             AvailableSerialPorts.Clear();
 
-            // Sort COM ports numerically
-            var ports = SerialPortWrapper.GetAvailablePorts()
-                     .OrderBy(port =>
-            {
-                if (port.StartsWith("COM") && int.TryParse(port.Substring(3), out int portNumber))
-                    return portNumber;
-                return int.MaxValue;
-            }).ToList();
+            var ports = _serialPort.GetAvailablePorts()
+             .OrderBy(port =>
+    {
+        if (port.StartsWith("COM") && int.TryParse(port.Substring(3), out int portNumber))
+            return portNumber;
+        return int.MaxValue;
+    }).ToList();
 
             foreach (var port in ports)
             {
@@ -512,7 +532,7 @@ namespace Quintilink.ViewModels
                     .ToList()
             };
 
-            MessageStore.Save(storage);
+            _messageStoreService.Save(storage);
         }
 
         [RelayCommand(CanExecute = nameof(CanConnect), AllowConcurrentExecutions = true)]
@@ -689,69 +709,34 @@ namespace Quintilink.ViewModels
         [RelayCommand]
         private async Task AddMessage()
         {
-            var editor = new MessageEditorViewModel();
+            if (_dialogService == null)
+                return;
 
-            if (_dialogService != null)
+            var editor = _dialogService.CreateViewModel<MessageEditorViewModel>();
+            var result = await _dialogService.ShowDialogAsync(editor);
+            if (result == true)
             {
-                var result = await _dialogService.ShowDialogAsync(editor);
-                if (result == true)
-                {
-                    PredefinedMessages.Add(editor.ToDefinition());
-                    SaveMessages();
-                }
-            }
-            else
-            {
-                var dlg = new Views.MessageEditorWindow
-                {
-                    DataContext = editor,
-                    Owner = Application.Current?.MainWindow,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner
-                };
-
-                if (dlg.ShowDialog() == true)
-                {
-                    PredefinedMessages.Add(editor.ToDefinition());
-                    SaveMessages();
-                }
+                PredefinedMessages.Add(editor.ToDefinition());
+                SaveMessages();
             }
         }
 
         [RelayCommand]
         private async Task EditMessage(MessageDefinition? message)
         {
-            if (message is null) return;
-            var editor = new MessageEditorViewModel(message);
+            if (message is null || _dialogService == null) return;
 
-            if (_dialogService != null)
+            var editor = _dialogService.CreateViewModel<MessageEditorViewModel>();
+            editor.Load(message);
+
+            var result = await _dialogService.ShowDialogAsync(editor);
+            if (result == true)
             {
-                var result = await _dialogService.ShowDialogAsync(editor);
-                if (result == true)
+                var index = PredefinedMessages.IndexOf(message);
+                if (index >= 0)
                 {
-                    var index = PredefinedMessages.IndexOf(message);
-                    if (index >= 0)
-                    {
-                        PredefinedMessages[index] = editor.ToDefinition();
-                        SaveMessages();
-                    }
-                }
-            }
-            else
-            {
-                var dlg = new Views.MessageEditorWindow
-                {
-                    DataContext = editor,
-                    Owner = Application.Current?.MainWindow,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner
-                };
-                if (dlg.ShowDialog() == true)
-                {
-                    var index = PredefinedMessages.IndexOf(message);
-                    if (index >= 0)
-                    {
-                        PredefinedMessages[index] = editor.ToDefinition();
-                        SaveMessages();
-                    }
+                    PredefinedMessages[index] = editor.ToDefinition();
+                    SaveMessages();
                 }
             }
         }
@@ -850,67 +835,36 @@ namespace Quintilink.ViewModels
         [RelayCommand]
         private async Task AddReaction()
         {
-            var vm = new ResponseEditorViewModel();
+            if (_dialogService == null)
+                return;
 
-            if (_dialogService != null)
+            var vm = _dialogService.CreateViewModel<ResponseEditorViewModel>();
+            var result = await _dialogService.ShowDialogAsync(vm);
+            if (result == true)
             {
-                var result = await _dialogService.ShowDialogAsync(vm);
-                if (result == true)
-                {
-                    _reactions.Add(new ReactionItem(vm.Trigger, vm.ToDefinition()));
-                    RefreshReactions();
-                    SaveMessages();
-                }
-            }
-            else
-            {
-                var dlg = new Views.ResponseEditorWindow { DataContext = vm, Owner = Application.Current?.MainWindow };
-                vm.RequestClose += result => dlg.DialogResult = result;
-
-                if (dlg.ShowDialog() == true)
-                {
-                    _reactions.Add(new ReactionItem(vm.Trigger, vm.ToDefinition()));
-                    RefreshReactions();
-                    SaveMessages();
-                }
+                _reactions.Add(new ReactionItem(vm.Trigger, vm.ToDefinition()));
+                RefreshReactions();
+                SaveMessages();
             }
         }
 
         [RelayCommand]
         private async Task EditReaction(ReactionItem? item)
         {
-            if (item is null) return;
+            if (item is null || _dialogService == null) return;
 
-            var vm = new ResponseEditorViewModel(item.Trigger, item.Response);
+            var vm = _dialogService.CreateViewModel<ResponseEditorViewModel>();
+            vm.Load(item.Trigger, item.Response);
 
-            if (_dialogService != null)
+            var result = await _dialogService.ShowDialogAsync(vm);
+            if (result == true)
             {
-                var result = await _dialogService.ShowDialogAsync(vm);
-                if (result == true)
+                var idx = _reactions.IndexOf(item);
+                if (idx >= 0)
                 {
-                    var idx = _reactions.IndexOf(item);
-                    if (idx >= 0)
-                    {
-                        _reactions[idx] = new ReactionItem(vm.Trigger, vm.ToDefinition());
-                        RefreshReactions();
-                        SaveMessages();
-                    }
-                }
-            }
-            else
-            {
-                var dlg = new Views.ResponseEditorWindow { DataContext = vm, Owner = Application.Current?.MainWindow };
-                vm.RequestClose += result => dlg.DialogResult = result;
-
-                if (dlg.ShowDialog() == true)
-                {
-                    var idx = _reactions.IndexOf(item);
-                    if (idx >= 0)
-                    {
-                        _reactions[idx] = new ReactionItem(vm.Trigger, vm.ToDefinition());
-                        RefreshReactions();
-                        SaveMessages();
-                    }
+                    _reactions[idx] = new ReactionItem(vm.Trigger, vm.ToDefinition());
+                    RefreshReactions();
+                    SaveMessages();
                 }
             }
         }
@@ -1376,7 +1330,7 @@ namespace Quintilink.ViewModels
         {
             _settings.QuickSendHistory = QuickSendHistory.ToList();
             _settings.QuickSendPinnedSnippets = QuickSendPinnedSnippets.ToList();
-            _settings.Save();
+            _settingsService.Save();
         }
 
         private void StartStatisticsTimer()
@@ -1489,92 +1443,27 @@ namespace Quintilink.ViewModels
         [RelayCommand]
         private void ShowStatistics()
         {
-            InvokeOnUiThread(() =>
-            {
-                if (_statisticsWindow == null)
-                {
-                    var vm = new StatisticsViewModel(_statistics);
-
-                    _statisticsWindow = new StatisticsWindow
-                    {
-                        DataContext = vm,
-                        Owner = Application.Current?.MainWindow,
-                        WindowStartupLocation = WindowStartupLocation.CenterOwner
-                    };
-
-                    _statisticsWindow.Closed += (_, __) =>
-                    {
-                        _statisticsWindowUpdateTimer?.Dispose();
-                        _statisticsWindowUpdateTimer = null;
-                        _statisticsWindow = null;
-                    };
-
-                    _statisticsWindow.Show();
-
-                    // update stats ~4x/sec while window is open
-                    _statisticsWindowUpdateTimer?.Dispose();
-                    _statisticsWindowUpdateTimer = new System.Threading.Timer(_ =>
-                    {
-                        InvokeOnUiThread(() =>
-                        {
-                            if (_statisticsWindow?.DataContext is StatisticsViewModel svm)
-                                svm.UpdateStatistics();
-                        });
-                    }, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(250));
-                }
-                else
-                {
-                    if (!_statisticsWindow.IsVisible)
-                        _statisticsWindow.Show();
-
-                    _statisticsWindow.Activate();
-                }
-            });
+            _toolWindowService?.ShowStatistics();
         }
 
         [RelayCommand]
         private void ShowAbout()
         {
-            InvokeOnUiThread(() =>
-            {
-                var vm = new AboutViewModel();
-                var aboutWindow = new Views.AboutWindow
-                {
-                    DataContext = vm,
-                    Owner = Application.Current?.MainWindow,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner
-                };
-                aboutWindow.ShowDialog();
-            });
+            _toolWindowService?.ShowAbout();
         }
 
         [RelayCommand]
         private async Task SearchHexPattern()
         {
-            var vm = new SearchDialogViewModel();
+            if (_dialogService == null)
+                return;
 
-            bool? result;
-            if (_dialogService != null)
-            {
-                result = await _dialogService.ShowDialogAsync(vm);
-            }
-            else
-            {
-                var dlg = new SearchDialog
-                {
-                    DataContext = vm,
-                    Owner = Application.Current?.MainWindow,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner
-                };
-
-                vm.RequestClose += r => dlg.DialogResult = r;
-                result = dlg.ShowDialog();
-            }
+            var vm = _dialogService.CreateViewModel<SearchDialogViewModel>();
+            var result = await _dialogService.ShowDialogAsync(vm);
 
             if (result != true)
                 return;
 
-            // Store last filter
             _currentSearchFilter = new HexSearchFilter
             {
                 Pattern = vm.SearchPattern,
@@ -1590,22 +1479,7 @@ namespace Quintilink.ViewModels
             }
 
             var matches = SearchInLogEntries(snapshot, _currentSearchFilter);
-
-            InvokeOnUiThread(() =>
-            {
-                var resultsVm = new SearchResultsViewModel();
-                resultsVm.LoadResults(vm.SearchPattern, matches);
-
-                var wnd = new SearchResultsWindow
-                {
-                    DataContext = resultsVm,
-                    Owner = Application.Current?.MainWindow,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner
-                };
-
-                wnd.Show();
-                wnd.Activate();
-            });
+            _toolWindowService?.ShowSearchResults(vm.SearchPattern, matches);
         }
 
         private static List<LogEntry> SearchInLogEntries(List<LogEntry> entries, HexSearchFilter filter)
@@ -1636,20 +1510,7 @@ namespace Quintilink.ViewModels
         [RelayCommand]
         private void CompareMessages()
         {
-            InvokeOnUiThread(() =>
-            {
-                var vm = new HexComparisonViewModel();
-                vm.LoadMessages(PredefinedMessages);
-
-                var wnd = new Views.HexComparisonWindow
-                {
-                    DataContext = vm,
-                    Owner = Application.Current?.MainWindow,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner
-                };
-
-                wnd.Show();
-            });
+            _toolWindowService?.ShowHexComparison(PredefinedMessages);
         }
     }
 }

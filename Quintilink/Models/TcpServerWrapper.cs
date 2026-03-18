@@ -1,9 +1,10 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using Quintilink.Services;
 
 namespace Quintilink.Models
 {
-    public class TcpServerWrapper
+    public class TcpServerWrapper : ITcpServerConnection
     {
         private TcpListener? _listener;
         private CancellationTokenSource? _cts;

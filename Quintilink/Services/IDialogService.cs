@@ -3,6 +3,11 @@ namespace Quintilink.Services
     public interface IDialogService
     {
         /// <summary>
+        /// Creates a dialog view model through the configured container.
+        /// </summary>
+        TViewModel CreateViewModel<TViewModel>() where TViewModel : class;
+
+        /// <summary>
    /// Shows a dialog window with the specified ViewModel and returns a result
         /// </summary>
         Task<bool?> ShowDialogAsync<TViewModel>(TViewModel viewModel) where TViewModel : class;

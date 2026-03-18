@@ -43,9 +43,9 @@ namespace Quintilink.ViewModels
         public ObservableCollection<ByteDifference> Differences { get; } = new();
         public ObservableCollection<MessageDefinition> AvailableMessages { get; } = new();
 
-        public HexComparisonViewModel()
+        public HexComparisonViewModel(IHexComparisonService comparisonService)
         {
-            _comparisonService = new HexComparisonService();
+            _comparisonService = comparisonService;
         }
 
         partial void OnMessage1Changed(MessageDefinition? value)
@@ -87,7 +87,7 @@ namespace Quintilink.ViewModels
             }
         }
 
-        public void LoadMessages(ObservableCollection<MessageDefinition> messages)
+        public void LoadMessages(IEnumerable<MessageDefinition> messages)
         {
             AvailableMessages.Clear();
             foreach (var msg in messages)

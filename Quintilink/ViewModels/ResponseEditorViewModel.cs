@@ -4,10 +4,11 @@ using System.Collections.ObjectModel;
 using System.Text;
 using System.Text.RegularExpressions;
 using Quintilink.Models;
+using Quintilink.Services;
 
 namespace Quintilink.ViewModels;
 
-public partial class ResponseEditorViewModel : ObservableObject
+public partial class ResponseEditorViewModel : ObservableObject, IDialogRequestClose
 {
     private bool _isUpdating;
 
@@ -82,7 +83,7 @@ public partial class ResponseEditorViewModel : ObservableObject
 
     public ResponseEditorViewModel() { }
 
-    public ResponseEditorViewModel(string trigger, MessageDefinition def)
+    public void Load(string trigger, MessageDefinition def)
     {
         Trigger = trigger;
         TriggerAscii = CollapseToAscii(FromHex(trigger));
@@ -93,6 +94,11 @@ public partial class ResponseEditorViewModel : ObservableObject
         DelayMs = def.DelayMs.ToString();
         Priority = def.Priority.ToString();
         StopAfterMatch = def.StopAfterMatch;
+    }
+
+    public ResponseEditorViewModel(string trigger, MessageDefinition def)
+    {
+        Load(trigger, def);
     }
 
     // --- Commands ---

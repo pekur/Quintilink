@@ -2,10 +2,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using Quintilink.Models;
+using Quintilink.Services;
 
 namespace Quintilink.ViewModels
 {
-    public partial class SearchDialogViewModel : ObservableObject
+    public partial class SearchDialogViewModel : ObservableObject, IDialogRequestClose
     {
         [ObservableProperty]
         private string searchPattern = string.Empty;

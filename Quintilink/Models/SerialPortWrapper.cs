@@ -1,8 +1,9 @@
 using System.IO.Ports;
+using Quintilink.Services;
 
 namespace Quintilink.Models
 {
-    public class SerialPortWrapper
+    public class SerialPortWrapper : ISerialPortConnection
     {
         private SerialPort? _port;
         private bool _isDisconnected;
@@ -143,7 +144,7 @@ namespace Quintilink.Models
             RaiseDisconnected(false);
         }
 
-        public static string[] GetAvailablePorts()
+        public string[] GetAvailablePorts()
         {
             return SerialPort.GetPortNames();
         }
