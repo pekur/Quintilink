@@ -157,5 +157,16 @@ namespace Quintilink.Views
             }
         }
 
+        private void MqttPublishItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is ListBoxItem item && item.DataContext is MqttPublishDefinition def)
+            {
+                if (DataContext is MainViewModel vm && vm.PublishMqttCommand.CanExecute(def))
+                {
+                    vm.PublishMqttCommand.Execute(def);
+                }
+            }
+        }
+
     }
 }

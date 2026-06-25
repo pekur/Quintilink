@@ -17,6 +17,16 @@ namespace Quintilink.Models
         /// New list-based reactions allowing multiple responses per trigger.
         /// </summary>
         public List<ReactionDto> ReactionsList { get; set; } = new();
+
+        /// <summary>
+        /// Predefined MQTT topics + payloads available for publishing.
+        /// </summary>
+        public List<MqttPublishDto> MqttPublishMessages { get; set; } = new();
+
+        /// <summary>
+        /// Configured MQTT topic subscriptions.
+        /// </summary>
+        public List<MqttSubscriptionDto> MqttSubscriptions { get; set; } = new();
     }
 
     public class MessageDto

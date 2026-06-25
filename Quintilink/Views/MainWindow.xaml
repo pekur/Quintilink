@@ -112,6 +112,19 @@
                             </Style>
                         </RadioButton.Style>
                     </RadioButton>
+
+                    <RadioButton Content="MQTT Client" IsChecked="{Binding IsMqttMode}" GroupName="ConnectionMode" VerticalAlignment="Center">
+                        <RadioButton.Style>
+                            <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
+                                <Setter Property="IsEnabled" Value="True"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                        <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </RadioButton.Style>
+                    </RadioButton>
                 </StackPanel>
 
                 <!-- Connection Settings -->
@@ -123,6 +136,9 @@
                                 <Setter Property="Visibility" Value="Visible"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsSerialMode}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsMqttMode}" Value="True">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -251,6 +267,49 @@
                             </ComboBox.Style>
                         </ComboBox>
                     </StackPanel>
+
+                    <!-- MQTT Settings -->
+                    <WrapPanel Orientation="Horizontal" ItemHeight="36">
+                        <WrapPanel.Resources>
+                            <Style x:Key="MqttFieldStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="Margin" Value="0,0,6,0"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                        <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                            <Style x:Key="MqttCheckStyle" TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="Margin" Value="0,0,10,0"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                        <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </WrapPanel.Resources>
+                        <WrapPanel.Style>
+                            <Style TargetType="WrapPanel">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsMqttMode}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </WrapPanel.Style>
+
+                        <TextBox Width="140" Text="{Binding MqttHost, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MqttFieldStyle}" ToolTip="Broker host"/>
+                        <TextBox Width="60" Text="{Binding MqttPort, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MqttFieldStyle}" ToolTip="Broker port (default 1883)"/>
+                        <TextBox Width="120" Text="{Binding MqttClientId, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MqttFieldStyle}" ToolTip="Client ID (auto-generated when empty)"/>
+                        <TextBox Width="100" Text="{Binding MqttUsername, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MqttFieldStyle}" ToolTip="Username (optional)"/>
+                        <TextBox Width="100" Text="{Binding MqttPassword, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MqttFieldStyle}" ToolTip="Password (optional)"/>
+                        <TextBox Width="55" Text="{Binding MqttKeepAlive, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MqttFieldStyle}" ToolTip="Keep-alive seconds"/>
+                        <CheckBox Content="Clean" IsChecked="{Binding MqttCleanSession}" Style="{StaticResource MqttCheckStyle}" ToolTip="Clean session"/>
+                        <CheckBox Content="TLS" IsChecked="{Binding MqttUseTls}" Style="{StaticResource MqttCheckStyle}" ToolTip="Use TLS"/>
+                    </WrapPanel>
                 </Grid>
 
                 <!-- Actions + Status -->
@@ -591,6 +650,167 @@
                             </StackPanel>
                         </Grid>
                     </TabItem>
+
+                    <TabItem ToolTip="MQTT subscriptions and publish topics" Width="Auto">
+                        <TabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Cloud24" Margin="0,0,5,0"/>
+                                <TextBlock>MQTT</TextBlock>
+                            </StackPanel>
+                        </TabItem.Header>
+
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Subscriptions header + add row -->
+                            <TextBlock Grid.Row="0" Text="Subscriptions" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
+
+                            <Grid Grid.Row="1" Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" FontFamily="Consolas" VerticalContentAlignment="Center" Margin="0,0,6,0"
+                                         Text="{Binding NewSubscriptionTopic, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="Topic filter to subscribe to (e.g. sensors/#)">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Return" Command="{Binding AddSubscriptionCommand}"/>
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                                <ComboBox Grid.Column="1" Width="60" Margin="0,0,6,0" VerticalAlignment="Center"
+                                          ItemsSource="{Binding MqttQosLevels}" SelectedItem="{Binding NewSubscriptionQos}"
+                                          ToolTip="Subscription QoS"/>
+                                <ui:Button Grid.Column="2" Command="{Binding AddSubscriptionCommand}" ToolTip="Add subscription" Padding="6,4" Background="Transparent">
+                                    <ui:SymbolIcon Symbol="Add16" FontSize="20"/>
+                                </ui:Button>
+                            </Grid>
+
+                            <ListBox Grid.Row="2" ItemsSource="{Binding MqttSubscriptions}" Margin="0,0,0,10" BorderBrush="#DDD" BorderThickness="1"
+                                     x:Name="mqttSubList"
+                                     VerticalContentAlignment="Stretch" VerticalAlignment="Stretch">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Padding" Value="5,3"/>
+                                        <Setter Property="Margin" Value="0"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <ui:Button Grid.Column="0"
+                                                       Command="{Binding DataContext.ToggleSubscriptionCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                       CommandParameter="{Binding}"
+                                                       ToolTip="Subscribe / unsubscribe"
+                                                       Padding="4" Margin="0,0,6,0" Background="Transparent" VerticalAlignment="Center">
+                                                <ui:SymbolIcon FontSize="16">
+                                                    <ui:SymbolIcon.Style>
+                                                        <Style TargetType="ui:SymbolIcon">
+                                                            <Setter Property="Symbol" Value="PlugDisconnected24"/>
+                                                            <Setter Property="Foreground" Value="Gray"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSubscribed}" Value="True">
+                                                                    <Setter Property="Symbol" Value="PlugConnected24"/>
+                                                                    <Setter Property="Foreground" Value="LimeGreen"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </ui:SymbolIcon.Style>
+                                                </ui:SymbolIcon>
+                                            </ui:Button>
+
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Topic}" FontFamily="Consolas" FontSize="13"/>
+                                                <TextBlock Text="{Binding Qos, StringFormat=QoS {0}}" FontSize="11" Foreground="Gray"/>
+                                            </StackPanel>
+
+                                            <ui:Button Grid.Column="2"
+                                                       Command="{Binding DataContext.DeleteSubscriptionCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                       CommandParameter="{Binding}"
+                                                       ToolTip="Delete subscription"
+                                                       Padding="4" Background="Transparent" VerticalAlignment="Center">
+                                                <ui:SymbolIcon Symbol="Delete16" FontSize="16"/>
+                                            </ui:Button>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <!-- Publish header -->
+                            <TextBlock Grid.Row="3" Text="Publish topics" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,4"/>
+
+                            <ListBox Grid.Row="4" ItemsSource="{Binding MqttPublishMessages}" Margin="0,0,0,10" BorderBrush="#DDD" BorderThickness="1"
+                                     x:Name="mqttPublishList"
+                                     VerticalContentAlignment="Stretch" VerticalAlignment="Stretch">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Padding" Value="5,3"/>
+                                        <Setter Property="Margin" Value="0"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                        <EventSetter Event="MouseDoubleClick" Handler="MqttPublishItem_MouseDoubleClick"/>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock Grid.Row="0" Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
+
+                                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,2,0,0">
+                                                <TextBlock Text="Topic: " FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="{Binding Topic}" FontSize="11" FontFamily="Consolas"/>
+                                                <TextBlock Text="  •  " FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="{Binding QosRetainSummary}" FontSize="11" Foreground="Gray"/>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,2,0,0">
+                                                <TextBlock Text="Payload: " FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="{Binding PayloadPreview}" FontSize="11" FontFamily="Consolas" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <ui:Button Command="{Binding PublishMqttCommand}" CommandParameter="{Binding SelectedItem, ElementName=mqttPublishList}" ToolTip="Publish selected topic"
+                                           Margin="2,0" Padding="2" Background="Transparent">
+                                    <ui:SymbolIcon Symbol="Send16" FontSize="24"/>
+                                </ui:Button>
+                                <ui:Button Command="{Binding AddMqttPublishCommand}" ToolTip="Add publish topic"
+                                           Margin="2,0" Padding="2" Background="Transparent">
+                                    <ui:SymbolIcon Symbol="Add16" FontSize="24"/>
+                                </ui:Button>
+                                <ui:Button Command="{Binding EditMqttPublishCommand}" CommandParameter="{Binding SelectedItem, ElementName=mqttPublishList}" ToolTip="Edit publish topic"
+                                           Margin="2,0" Padding="2" Background="Transparent">
+                                    <ui:SymbolIcon Symbol="Edit16" FontSize="24"/>
+                                </ui:Button>
+                                <ui:Button Command="{Binding DeleteMqttPublishCommand}" CommandParameter="{Binding SelectedItem, ElementName=mqttPublishList}" ToolTip="Delete publish topic"
+                                           Margin="2,0" Padding="2" Background="Transparent">
+                                    <ui:SymbolIcon Symbol="Delete16" FontSize="24"/>
+                                </ui:Button>
+                            </StackPanel>
+                        </Grid>
+                    </TabItem>
                 </TabControl>
             </ui:Card>
         </Grid>
@@ -636,6 +856,21 @@
                     </ComboBox>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <TextBox Width="180" Height="35" Margin="0,0,8,0" VerticalContentAlignment="Center"
+                                 FontFamily="Consolas" FontSize="13" Padding="10,8"
+                                 Text="{Binding MqttQuickTopic, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="MQTT topic used when publishing via Quick Send">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsMqttMode}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
                         <ui:Button Command="{Binding PinQuickSendSnippetCommand}" ToolTip="Pin current quick-send text" Height="35" Margin="0,0,8,0" Padding="10,8">
                             <ui:SymbolIcon Symbol="Pin16" FontSize="16"/>
                         </ui:Button>

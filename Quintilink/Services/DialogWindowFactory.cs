@@ -20,6 +20,7 @@ namespace Quintilink.Services
             {
                 var type when type == typeof(MessageEditorViewModel) => typeof(MessageEditorWindow),
                 var type when type == typeof(ResponseEditorViewModel) => typeof(ResponseEditorWindow),
+                var type when type == typeof(MqttPublishEditorViewModel) => typeof(MqttPublishEditorWindow),
                 var type when type == typeof(SearchDialogViewModel) => typeof(SearchDialog),
                 _ => null
             };

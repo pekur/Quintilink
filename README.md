@@ -14,6 +14,7 @@ A modern WPF-based TCP/Serial communication tester for Windows, built with .NET 
 - **TCP Client** - Connect to remote TCP servers
 - **TCP Server** - Host a TCP server and accept multiple client connections
 - **Serial Port** - Communicate via COM ports with configurable baud rate, parity, data bits, and stop bits
+- **MQTT Client** - Connect to an MQTT broker, subscribe to topics, and publish predefined topic/payload messages
 
 ### Messaging
 - **Predefined Messages** - Save frequently used messages for quick sending
@@ -75,8 +76,19 @@ dotnet build
    - TCP Client: Enter host and port
    - TCP Server: Enter port to listen on
    - Serial Port: Select COM port and configure parameters
+   - MQTT Client: Enter broker host/port and optional client ID, username, password, keep-alive, clean session, and TLS
 3. **Connect** - Click the Connect button
 4. **Send Data** - Use Quick Send or select a predefined message
+
+### MQTT Client
+
+The MQTT mode lets Quintilink act as an MQTT client:
+
+1. Select **MQTT Client** and enter the broker connection details
+2. Open the **MQTT** tab on the right:
+   - **Subscriptions** - Add topic filters (e.g. `sensors/#`) with a QoS level. Configured subscriptions are applied automatically on connect, and each can be toggled on/off or removed. Incoming messages are shown in the log as `[RX] <topic> : <payload>`.
+   - **Publish topics** - Maintain a list of predefined topic/payload messages (with QoS and retain flag). Select one and click send (or double-click) to publish it to the broker.
+3. **Quick Send** in MQTT mode publishes the entered text to the topic shown in the MQTT topic field next to the Send button.
 
 ### Quick Send Examples
 
