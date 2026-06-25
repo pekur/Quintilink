@@ -43,6 +43,7 @@ namespace Quintilink
             services.AddSingleton<ITcpClientConnection, TcpClientWrapper>();
             services.AddSingleton<ITcpServerConnection, TcpServerWrapper>();
             services.AddSingleton<ISerialPortConnection, SerialPortWrapper>();
+            services.AddSingleton<IMqttClientConnection, MqttClientWrapper>();
             services.AddSingleton<ConnectionStatistics>();
             services.AddSingleton<IHexComparisonService, HexComparisonService>();
             services.AddSingleton<IDialogWindowFactory, DialogWindowFactory>();
@@ -54,6 +55,7 @@ namespace Quintilink
 
             services.AddTransient<MessageEditorViewModel>();
             services.AddTransient<ResponseEditorViewModel>();
+            services.AddTransient<MqttPublishEditorViewModel>();
             services.AddTransient<SearchDialogViewModel>();
             services.AddTransient<SearchResultsViewModel>();
             services.AddTransient<AboutViewModel>();
@@ -62,6 +64,7 @@ namespace Quintilink
 
             services.AddTransient<MessageEditorWindow>();
             services.AddTransient<ResponseEditorWindow>();
+            services.AddTransient<MqttPublishEditorWindow>();
             services.AddTransient<SearchDialog>();
             services.AddTransient<SearchResultsWindow>();
             services.AddTransient<AboutWindow>();

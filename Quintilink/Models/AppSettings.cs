@@ -16,6 +16,16 @@ namespace Quintilink.Models
         public int DataBits { get; set; } = 8;
         public int StopBits { get; set; } = 1; // One = 1
 
+        // MQTT Client Settings
+        public string MqttHost { get; set; } = "127.0.0.1";
+        public int MqttPort { get; set; } = 1883;
+        public string MqttClientId { get; set; } = string.Empty;
+        public string MqttUsername { get; set; } = string.Empty;
+        public string MqttPassword { get; set; } = string.Empty;
+        public int MqttKeepAlive { get; set; } = 15;
+        public bool MqttCleanSession { get; set; } = true;
+        public bool MqttUseTls { get; set; } = false;
+
         public List<string> QuickSendHistory { get; set; } = new();
         public List<string> QuickSendPinnedSnippets { get; set; } = new();
 

@@ -16,7 +16,8 @@ namespace Quintilink.ViewModels
     {
         TcpClient,
         TcpServer,
-        SerialPort
+        SerialPort,
+        MqttClient
     }
 
     public partial class MainViewModel : ObservableObject
@@ -24,6 +25,7 @@ namespace Quintilink.ViewModels
         private readonly ITcpClientConnection _client;
         private readonly ITcpServerConnection _server;
         private readonly ISerialPortConnection _serialPort;
+        private readonly IMqttClientConnection _mqtt;
         private readonly IAppSettingsService _settingsService;
         private readonly IMessageStoreService _messageStoreService;
         private readonly IToolWindowService? _toolWindowService;
@@ -114,9 +116,12 @@ namespace Quintilink.ViewModels
         [ObservableProperty]
         private bool isSerialMode = false;
 
+        [ObservableProperty]
+        private bool isMqttMode = false;
+
         public bool IsClientMode
         {
-            get => !IsServerMode && !IsSerialMode;
+            get => !IsServerMode && !IsSerialMode && !IsMqttMode;
             set
             {
                 if (!value)
@@ -128,28 +133,50 @@ namespace Quintilink.ViewModels
                 if (IsSerialMode)
                     IsSerialMode = false;
 
+                if (IsMqttMode)
+                    IsMqttMode = false;
+
                 OnPropertyChanged(nameof(IsClientMode));
             }
         }
 
         partial void OnIsServerModeChanged(bool value)
         {
-            if (value && IsSerialMode)
+            if (value)
             {
                 IsSerialMode = false;
+                IsMqttMode = false;
             }
 
             OnPropertyChanged(nameof(IsClientMode));
+            ConnectCommand.NotifyCanExecuteChanged();
+            UpdateServerStatus();
         }
 
         partial void OnIsSerialModeChanged(bool value)
         {
-            if (value && IsServerMode)
+            if (value)
             {
                 IsServerMode = false;
+                IsMqttMode = false;
             }
 
             OnPropertyChanged(nameof(IsClientMode));
+            ConnectCommand.NotifyCanExecuteChanged();
+            UpdateServerStatus();
+        }
+
+        partial void OnIsMqttModeChanged(bool value)
+        {
+            if (value)
+            {
+                IsServerMode = false;
+                IsSerialMode = false;
+            }
+
+            OnPropertyChanged(nameof(IsClientMode));
+            ConnectCommand.NotifyCanExecuteChanged();
+            UpdateServerStatus();
         }
 
         [ObservableProperty]
@@ -239,6 +266,94 @@ namespace Quintilink.ViewModels
         [ObservableProperty]
         private bool rtsEnabled;
 
+        // MQTT Client Properties
+        [ObservableProperty]
+        private string mqttHost = string.Empty;
+
+        partial void OnMqttHostChanged(string value)
+        {
+            _settings.MqttHost = value;
+            _settingsService.Save();
+            ConnectCommand.NotifyCanExecuteChanged();
+        }
+
+        [ObservableProperty]
+        private int mqttPort;
+
+        partial void OnMqttPortChanged(int value)
+        {
+            _settings.MqttPort = value;
+            _settingsService.Save();
+        }
+
+        [ObservableProperty]
+        private string mqttClientId = string.Empty;
+
+        partial void OnMqttClientIdChanged(string value)
+        {
+            _settings.MqttClientId = value;
+            _settingsService.Save();
+        }
+
+        [ObservableProperty]
+        private string mqttUsername = string.Empty;
+
+        partial void OnMqttUsernameChanged(string value)
+        {
+            _settings.MqttUsername = value;
+            _settingsService.Save();
+        }
+
+        [ObservableProperty]
+        private string mqttPassword = string.Empty;
+
+        partial void OnMqttPasswordChanged(string value)
+        {
+            _settings.MqttPassword = value;
+            _settingsService.Save();
+        }
+
+        [ObservableProperty]
+        private int mqttKeepAlive;
+
+        partial void OnMqttKeepAliveChanged(int value)
+        {
+            _settings.MqttKeepAlive = value;
+            _settingsService.Save();
+        }
+
+        [ObservableProperty]
+        private bool mqttCleanSession;
+
+        partial void OnMqttCleanSessionChanged(bool value)
+        {
+            _settings.MqttCleanSession = value;
+            _settingsService.Save();
+        }
+
+        [ObservableProperty]
+        private bool mqttUseTls;
+
+        partial void OnMqttUseTlsChanged(bool value)
+        {
+            _settings.MqttUseTls = value;
+            _settingsService.Save();
+        }
+
+        [ObservableProperty]
+        private string mqttQuickTopic = string.Empty;
+
+        [ObservableProperty]
+        private string newSubscriptionTopic = string.Empty;
+
+        [ObservableProperty]
+        private int newSubscriptionQos;
+
+        public ObservableCollection<int> MqttQosLevels { get; } = new() { 0, 1, 2 };
+
+        public ObservableCollection<MqttPublishDefinition> MqttPublishMessages { get; } = new();
+        public ObservableCollection<MqttSubscriptionItem> MqttSubscriptions { get; } = new();
+
         public ObservableCollection<string> AvailableSerialPorts { get; } = new();
         public ObservableCollection<int> BaudRates { get; } = new() { 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200 };
         public ObservableCollection<Parity> ParityOptions { get; } = new()
@@ -277,6 +392,7 @@ namespace Quintilink.ViewModels
             new TcpClientWrapper(),
             new TcpServerWrapper(),
             new SerialPortWrapper(),
+            new MqttClientWrapper(),
             new ConnectionStatistics(),
             null)
         {
@@ -292,6 +408,7 @@ namespace Quintilink.ViewModels
             ITcpClientConnection client,
             ITcpServerConnection server,
             ISerialPortConnection serialPort,
+            IMqttClientConnection mqtt,
             ConnectionStatistics statistics,
             IToolWindowService? toolWindowService)
         {
@@ -303,6 +420,7 @@ namespace Quintilink.ViewModels
             _client = client;
             _server = server;
             _serialPort = serialPort;
+            _mqtt = mqtt;
             _statistics = statistics;
             _toolWindowService = toolWindowService;
 
@@ -373,6 +491,49 @@ namespace Quintilink.ViewModels
                 InvokeOnUiThread(UpdateModemLineStatus);
             };
 
+            _mqtt.MessageReceived += (topic, payload) =>
+            {
+                _statistics.RecordReceived(payload.Length);
+
+                string ascii = ConvertToReadableAscii(payload);
+                string hex = BitConverter.ToString(payload).Replace("-", " ");
+                InvokeOnUiThread(() =>
+                {
+                    AppendLog($"[RX] {topic} : {ascii}");
+                    if (payload.Length > 0)
+                        AppendLog($"[RX] HEX  : {hex}");
+                });
+            };
+
+            _mqtt.Connected += () =>
+            {
+                InvokeOnUiThread(() => AppendLog("[SYS] MQTT connected"));
+            };
+
+            _mqtt.Disconnected += remote =>
+            {
+                InvokeOnUiThread(() =>
+                {
+                    if (!IsMqttMode || !IsConnected)
+                        return;
+
+                    AppendLog(remote
+                        ? "[SYS] MQTT disconnected by broker"
+                        : "[SYS] MQTT disconnected");
+
+                    IsConnected = false;
+                    foreach (var sub in MqttSubscriptions)
+                        sub.IsSubscribed = false;
+
+                    _statistics.EndConnection();
+                    StopStatisticsTimer();
+
+                    ConnectCommand.NotifyCanExecuteChanged();
+                    DisconnectCommand.NotifyCanExecuteChanged();
+                    UpdateServerStatus();
+                });
+            };
+
             // Load messages and reactions
             var loaded = _messageStoreService.Load();
 
@@ -388,6 +549,14 @@ namespace Quintilink.ViewModels
             }
 
             RefreshReactions();
+
+            MqttPublishMessages.Clear();
+            foreach (var dto in loaded.MqttPublishMessages)
+                MqttPublishMessages.Add(dto.ToDefinition());
+
+            MqttSubscriptions.Clear();
+            foreach (var dto in loaded.MqttSubscriptions)
+                MqttSubscriptions.Add(dto.ToItem());
 
             // load settings
             _settings = _settingsService.Current;
@@ -409,6 +578,16 @@ namespace Quintilink.ViewModels
             SelectedParity = (Parity)_settings.Parity;
             SelectedDataBits = _settings.DataBits;
             SelectedStopBits = (StopBits)_settings.StopBits;
+
+            // Load MQTT settings
+            MqttHost = _settings.MqttHost;
+            MqttPort = _settings.MqttPort;
+            MqttClientId = _settings.MqttClientId;
+            MqttUsername = _settings.MqttUsername;
+            MqttPassword = _settings.MqttPassword;
+            MqttKeepAlive = _settings.MqttKeepAlive;
+            MqttCleanSession = _settings.MqttCleanSession;
+            MqttUseTls = _settings.MqttUseTls;
 
             ConnectCommand.NotifyCanExecuteChanged();
             DisconnectCommand.NotifyCanExecuteChanged();
@@ -490,6 +669,11 @@ namespace Quintilink.ViewModels
                 ServerStatus = IsConnected ? $"Connected ({SelectedSerialPort})" : "Disconnected";
                 ServerStatusTooltip = IsConnected ? $"{SelectedBaudRate} baud, {SelectedDataBits}{SelectedParity.ToString()[0]}{(int)SelectedStopBits}" : "";
             }
+            else if (IsMqttMode)
+            {
+                ServerStatus = IsConnected ? "MQTT connected" : "Disconnected";
+                ServerStatusTooltip = IsConnected ? $"Broker {MqttHost}:{MqttPort}" : "";
+            }
             else if (!IsServerMode)
             {
                 ServerStatus = IsConnected ? "Connected" : "Disconnected";
@@ -529,6 +713,12 @@ namespace Quintilink.ViewModels
                     .ToList(),
                 ReactionsList = _reactions
                     .Select(r => new ReactionDto(r.Trigger, r.Response))
+                    .ToList(),
+                MqttPublishMessages = MqttPublishMessages
+                    .Select(m => new MqttPublishDto(m))
+                    .ToList(),
+                MqttSubscriptions = MqttSubscriptions
+                    .Select(s => new MqttSubscriptionDto(s))
                     .ToList()
             };
 
@@ -582,6 +772,32 @@ namespace Quintilink.ViewModels
                     await _server.StartAsync(Port);
                     AppendLog($"[SYS] Server started on port {Port}");
                     IsConnected = true;
+                }
+                else if (IsMqttMode)
+                {
+                    _connectAttemptCts = new CancellationTokenSource();
+                    var showCancelTask = ShowCancelAfterDelayAsync(_connectAttemptCts.Token);
+
+                    var mqttOptions = new MqttConnectionOptions
+                    {
+                        Host = MqttHost,
+                        Port = MqttPort,
+                        ClientId = MqttClientId,
+                        Username = MqttUsername,
+                        Password = MqttPassword,
+                        KeepAliveSeconds = MqttKeepAlive,
+                        CleanSession = MqttCleanSession,
+                        UseTls = MqttUseTls
+                    };
+
+                    await _mqtt.ConnectAsync(mqttOptions, _connectAttemptCts.Token);
+                    _connectAttemptCts.Cancel();
+                    await showCancelTask;
+
+                    AppendLog($"[SYS] Connected to MQTT broker {MqttHost}:{MqttPort}");
+                    IsConnected = true;
+
+                    await SubscribeAllInternal();
                 }
                 else
                 {
@@ -641,6 +857,13 @@ namespace Quintilink.ViewModels
                 _server.Stop();
                 AppendLog("[SYS] Server stopped");
             }
+            else if (IsMqttMode)
+            {
+                _mqtt.Disconnect();
+                AppendLog("[SYS] MQTT disconnected");
+                foreach (var sub in MqttSubscriptions)
+                    sub.IsSubscribed = false;
+            }
             else
             {
                 _client.Disconnect();
@@ -672,7 +895,8 @@ namespace Quintilink.ViewModels
         private bool CanConnect() =>
             !IsConnected
             && (!_isConnectOperationInProgress || _connectAttemptCts is not null)
-            && (!IsSerialMode || !string.IsNullOrEmpty(SelectedSerialPort));
+            && (!IsSerialMode || !string.IsNullOrEmpty(SelectedSerialPort))
+            && (!IsMqttMode || !string.IsNullOrWhiteSpace(MqttHost));
         private bool CanDisconnect() => IsConnected;
 
         [RelayCommand]
@@ -682,6 +906,32 @@ namespace Quintilink.ViewModels
 
             var bytes = def.GetBytes();
             bool success = false;
+
+            if (IsMqttMode)
+            {
+                if (string.IsNullOrWhiteSpace(MqttQuickTopic))
+                {
+                    AppendLog("[ERR] Set an MQTT publish topic before sending raw messages, or use the MQTT publish list");
+                    return;
+                }
+
+                success = await _mqtt.PublishAsync(MqttQuickTopic, bytes, 0, false);
+
+                if (success)
+                {
+                    _statistics.RecordSent(bytes.Length);
+                    string ascii = ConvertToReadableAscii(bytes);
+                    string hex = MessageDefinition.ToSpacedHex(bytes);
+                    AppendLog($"[TX] {MqttQuickTopic} : {ascii}");
+                    AppendLog($"[TX] HEX  : {hex} – {bytes.Length} bytes");
+                }
+                else
+                {
+                    AppendLog($"[ERR] Failed to publish \"{def?.Name ?? "Unknown"}\" – not connected");
+                }
+
+                return;
+            }
 
             if (IsSerialMode)
                 success = await _serialPort.SendAsync(bytes);
@@ -1366,7 +1616,17 @@ namespace Quintilink.ViewModels
                 }
 
                 bool success;
-                if (IsSerialMode)
+                if (IsMqttMode)
+                {
+                    if (string.IsNullOrWhiteSpace(MqttQuickTopic))
+                    {
+                        AppendLog("[ERR] Quick Send: enter an MQTT topic to publish to");
+                        return;
+                    }
+
+                    success = await _mqtt.PublishAsync(MqttQuickTopic, bytes, 0, false);
+                }
+                else if (IsSerialMode)
                     success = await _serialPort.SendAsync(bytes);
                 else if (IsServerMode)
                     success = await _server.SendAsync(bytes);
@@ -1379,7 +1639,10 @@ namespace Quintilink.ViewModels
 
                     string ascii = ConvertToReadableAscii(bytes);
                     string hex = MessageDefinition.ToSpacedHex(bytes);
-                    AppendLog($"[TX] ASCII: {ascii}");
+                    if (IsMqttMode)
+                        AppendLog($"[TX] {MqttQuickTopic} : {ascii}");
+                    else
+                        AppendLog($"[TX] ASCII: {ascii}");
                     AppendLog($"[TX] HEX  : {hex} – {bytes.Length} bytes");
 
                     AddQuickSendHistoryEntry(QuickSendText);
@@ -1511,6 +1774,153 @@ namespace Quintilink.ViewModels
         private void CompareMessages()
         {
             _toolWindowService?.ShowHexComparison(PredefinedMessages);
+        }
+
+        // --- MQTT commands ---
+
+        [RelayCommand]
+        private async Task PublishMqtt(MqttPublishDefinition? def)
+        {
+            if (def is null)
+                return;
+
+            if (!IsConnected || !IsMqttMode)
+            {
+                AppendLog("[ERR] Cannot publish: MQTT broker not connected");
+                return;
+            }
+
+            var payload = Encoding.UTF8.GetBytes(def.Payload ?? string.Empty);
+            bool success = await _mqtt.PublishAsync(def.Topic, payload, def.Qos, def.Retain);
+
+            if (success)
+            {
+                _statistics.RecordSent(payload.Length);
+                string retain = def.Retain ? ", retain" : string.Empty;
+                AppendLog($"[TX] {def.Topic} (QoS {def.Qos}{retain}) : {def.Payload}");
+            }
+            else
+            {
+                AppendLog($"[ERR] Failed to publish \"{def.Name}\" to '{def.Topic}'");
+            }
+        }
+
+        [RelayCommand]
+        private async Task AddMqttPublish()
+        {
+            if (_dialogService == null)
+                return;
+
+            var editor = _dialogService.CreateViewModel<MqttPublishEditorViewModel>();
+            var result = await _dialogService.ShowDialogAsync(editor);
+            if (result == true)
+            {
+                MqttPublishMessages.Add(editor.ToDefinition());
+                SaveMessages();
+            }
+        }
+
+        [RelayCommand]
+        private async Task EditMqttPublish(MqttPublishDefinition? message)
+        {
+            if (message is null || _dialogService == null)
+                return;
+
+            var editor = _dialogService.CreateViewModel<MqttPublishEditorViewModel>();
+            editor.Load(message);
+
+            var result = await _dialogService.ShowDialogAsync(editor);
+            if (result == true)
+            {
+                var index = MqttPublishMessages.IndexOf(message);
+                if (index >= 0)
+                {
+                    MqttPublishMessages[index] = editor.ToDefinition();
+                    SaveMessages();
+                }
+            }
+        }
+
+        [RelayCommand]
+        private void DeleteMqttPublish(MqttPublishDefinition? message)
+        {
+            if (message is not null)
+            {
+                MqttPublishMessages.Remove(message);
+                SaveMessages();
+            }
+        }
+
+        [RelayCommand]
+        private async Task AddSubscription()
+        {
+            var topic = NewSubscriptionTopic?.Trim();
+            if (string.IsNullOrWhiteSpace(topic))
+                return;
+
+            if (MqttSubscriptions.Any(s => string.Equals(s.Topic, topic, StringComparison.Ordinal)))
+            {
+                AppendLog($"[SYS] Subscription '{topic}' already exists");
+                return;
+            }
+
+            var item = new MqttSubscriptionItem { Topic = topic, Qos = NewSubscriptionQos };
+            MqttSubscriptions.Add(item);
+            SaveMessages();
+
+            NewSubscriptionTopic = string.Empty;
+
+            if (IsConnected && IsMqttMode)
+                await SubscribeItem(item);
+        }
+
+        [RelayCommand]
+        private async Task DeleteSubscription(MqttSubscriptionItem? item)
+        {
+            if (item is null)
+                return;
+
+            if (IsConnected && IsMqttMode && item.IsSubscribed)
+                await _mqtt.UnsubscribeAsync(item.Topic);
+
+            MqttSubscriptions.Remove(item);
+            SaveMessages();
+        }
+
+        [RelayCommand]
+        private async Task ToggleSubscription(MqttSubscriptionItem? item)
+        {
+            if (item is null || !IsConnected || !IsMqttMode)
+                return;
+
+            if (item.IsSubscribed)
+            {
+                bool ok = await _mqtt.UnsubscribeAsync(item.Topic);
+                if (ok)
+                {
+                    item.IsSubscribed = false;
+                    AppendLog($"[SYS] Unsubscribed from '{item.Topic}'");
+                }
+            }
+            else
+            {
+                await SubscribeItem(item);
+            }
+        }
+
+        private async Task SubscribeItem(MqttSubscriptionItem item)
+        {
+            bool ok = await _mqtt.SubscribeAsync(item.Topic, item.Qos);
+            item.IsSubscribed = ok;
+            AppendLog(ok
+                ? $"[SYS] Subscribed to '{item.Topic}' (QoS {item.Qos})"
+                : $"[ERR] Failed to subscribe to '{item.Topic}'");
+        }
+
+        private async Task SubscribeAllInternal()
+        {
+            foreach (var sub in MqttSubscriptions.ToList())
+                await SubscribeItem(sub);
         }
     }
 }
