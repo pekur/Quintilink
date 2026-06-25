@@ -1,13 +1,13 @@
 using MQTTnet;
-using MQTTnet.Client;
 using MQTTnet.Protocol;
 using Quintilink.Services;
+using System.Buffers;
 
 namespace Quintilink.Models
 {
     public class MqttClientWrapper : IMqttClientConnection
     {
-        private readonly MqttFactory _factory = new();
+        private readonly MqttClientFactory _factory = new();
         private IMqttClient? _client;
         private bool _intentionalDisconnect;
 
@@ -26,11 +26,7 @@ namespace Quintilink.Models
 
             _client.ApplicationMessageReceivedAsync += e =>
             {
-                var segment = e.ApplicationMessage.PayloadSegment;
-                byte[] payload = segment.Count > 0 && segment.Array is not null
-                    ? segment.Array.Skip(segment.Offset).Take(segment.Count).ToArray()
-                    : Array.Empty<byte>();
-
+                byte[] payload = e.ApplicationMessage.Payload.ToArray();
                 MessageReceived?.Invoke(e.ApplicationMessage.Topic ?? string.Empty, payload);
                 return Task.CompletedTask;
             };
