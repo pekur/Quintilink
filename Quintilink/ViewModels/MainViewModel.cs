@@ -495,13 +495,10 @@ namespace Quintilink.ViewModels
             {
                 _statistics.RecordReceived(payload.Length);
 
-                string ascii = ConvertToReadableAscii(payload);
-                string hex = BitConverter.ToString(payload).Replace("-", " ");
+                string ascii = ConvertToReadableAscii(payload, false);
                 InvokeOnUiThread(() =>
                 {
                     AppendLog($"[RX] {topic} : {ascii}");
-                    if (payload.Length > 0)
-                        AppendLog($"[RX] HEX  : {hex}");
                 });
             };
 
@@ -1163,12 +1160,12 @@ namespace Quintilink.ViewModels
             await CheckReaction(hex);
         }
 
-        private static string ConvertToReadableAscii(byte[] data)
+        private static string ConvertToReadableAscii(byte[] data, bool collapse = true)
         {
             var sb = new StringBuilder(data.Length * 2);
             foreach (var b in data)
             {
-                sb.Append(MacroDefinitions.CollapseByte(b));
+                sb.Append(collapse ? MacroDefinitions.CollapseByte(b) : (char)b);
             }
             return sb.ToString();
         }
