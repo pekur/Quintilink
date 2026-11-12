@@ -14,7 +14,7 @@ Send a command, see the bytes that came back, and keep the messages you want to 
 
 Download the Windows x64 ZIP from [GitHub Releases](https://github.com/pekur/Quintilink/releases/latest), extract it to a writable folder and open `Quintilink.exe`. The release is self-contained and includes the .NET runtime.
 
-The [1.3.0 release](https://github.com/pekur/Quintilink/releases/tag/Release_1.3.0) predates MQTT support. To try MQTT or follow the screenshots in this README, [build from source](#build-from-source).
+MQTT support starts with version 1.4.0. To try changes from the development branch, [build from source](#build-from-source).
 
 ## Try it locally
 
